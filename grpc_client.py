@@ -10,6 +10,7 @@ logs carry the same trace_id, and reports either the order or the gRPC status + 
 Exit code: 0 = order created/replayed, 1 = the service answered with an error, 2 = could not complete (deadline / unreachable).
 """
 import argparse
+import os
 import secrets
 import sys
 
@@ -34,6 +35,28 @@ def place_order(target, product_id, quantity, payment_token, idempotency_key="",
             return None, err, traceparent
 
 
+def get_product(target, product_id, deadline_s=5.0, traceparent=None, channel=None):
+    """Assignment 3: read-only unary call. Returns (response_or_None, grpc_error_or_None, traceparent_used,
+    replica_that_answered_or_None). Pass `channel` to reuse one connection for many calls."""
+    traceparent = traceparent or make_traceparent()
+    request = inora_pb2.GetProductRequest(product_id=product_id)
+    own = channel is None
+    channel = channel or grpc.insecure_channel(target)
+    try:
+        stub = inora_pb2_grpc.CatalogServiceStub(channel)
+        try:
+            response, call = stub.GetProduct.with_call(request, timeout=deadline_s,
+                                                       metadata=(("traceparent", traceparent),))
+            replica = dict(call.initial_metadata() or ()).get("x-replica")
+            return response, None, traceparent, replica
+        except grpc.RpcError as err:
+            replica = dict(err.initial_metadata() or ()).get("x-replica") if hasattr(err, "initial_metadata") else None
+            return None, err, traceparent, replica
+    finally:
+        if own:
+            channel.close()
+
+
 def describe_error(err):
     trailing = dict(err.trailing_metadata() or ())
     return {"status": err.code().name, "details": err.details(), "error_code": trailing.get("error-code", "-")}
@@ -41,7 +64,8 @@ def describe_error(err):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--target", default="127.0.0.1:50051")
+    # Assignment 3: the gRPC replicas have no host port; clients go through Envoy's gRPC listener (10001).
+    ap.add_argument("--target", default=os.environ.get("INORA_GRPC_TARGET", "127.0.0.1:10001"))
     ap.add_argument("--product-id", required=True)
     ap.add_argument("--quantity", type=int, required=True)
     ap.add_argument("--payment-token", required=True)

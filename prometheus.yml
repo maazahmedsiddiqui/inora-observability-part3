@@ -1,25 +1,35 @@
+# Assignment 3: Prometheus scrapes EVERY replica and Envoy DIRECTLY (by container name), never through
+# Envoy's balanced route. The `replica` label is attached here, per target:  A = ...-1, B = ...-2, C = ...-3.
+# The app also reports its own idea of its identity in `inora_replica_info{reported_replica=...}`; the two must agree.
 global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: 'inora_backend'
+  - job_name: 'inora_backend'            # HTTP API replicas (Flask, /metrics on :5000)
     static_configs:
-      - targets: ['api:5000']
+      - targets: ['inora-observability-part3-api-1:5000']
+        labels: { replica: 'A' }
+      - targets: ['inora-observability-part3-api-2:5000']
+        labels: { replica: 'B' }
+      - targets: ['inora-observability-part3-api-3:5000']
+        labels: { replica: 'C' }
 
-  - job_name: 'inora_grpc'
+  - job_name: 'inora_grpc'               # gRPC replicas (metrics server on :9102)
     static_configs:
-      - targets: ['grpc:9102']
+      - targets: ['inora-observability-part3-grpc-1:9102']
+        labels: { replica: 'A' }
+      - targets: ['inora-observability-part3-grpc-2:9102']
+        labels: { replica: 'B' }
+      - targets: ['inora-observability-part3-grpc-3:9102']
+        labels: { replica: 'C' }
+
+  - job_name: 'envoy'                    # Envoy admin endpoint, Prometheus format
+    metrics_path: /stats/prometheus
+    static_configs:
+      - targets: ['envoy:9901']
 
   - job_name: 'node_exporter'
     static_configs:
       - targets: ['node-exporter:9100']
         labels:
-          machine: 'DESKTOP-682RE3R'   
-
-  - job_name: 'cardinality_test'
-    static_configs:
-      - targets: ['host.docker.internal:8001']
-
-  - job_name: 'cardinality_test_v2'
-    static_configs:
-      - targets: ['host.docker.internal:8002']
+          machine: 'DESKTOP-682RE3R'

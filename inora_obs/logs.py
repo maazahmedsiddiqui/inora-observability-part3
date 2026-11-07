@@ -1,8 +1,11 @@
-"""Assignment 1 JSON log format plus trace_id. One JSON object per line; Filebeat ships them to Elasticsearch.
+"""Assignment 1 JSON log format plus trace_id (and, since Assignment 3, the replica that wrote the line).
+One JSON object per line; Filebeat ships them to Elasticsearch.
 Log calls pass the structured fields as `extra={...}`. Never log payment tokens."""
 import json
 import logging
 import os
+
+from .replica import REPLICA
 
 
 class JsonFormatter(logging.Formatter):
@@ -14,6 +17,7 @@ class JsonFormatter(logging.Formatter):
         return json.dumps({
             "time": self.formatTime(record),
             "service_name": self.service_name,
+            "replica": REPLICA,
             "severity": record.levelname,
             "message": record.getMessage(),
             "request_id": getattr(record, "request_id", "n/a"),
@@ -24,7 +28,11 @@ class JsonFormatter(logging.Formatter):
 
 
 def setup_file_logging(service_name, log_file):
-    """Attach the JSON file handler to the root logger once."""
+    """Attach the JSON file handler to the root logger once.
+
+    `{replica}` in log_file is replaced by this container's replica name, so replicas that share the ./logs
+    folder each write their own file (api-A.log, api-B.log, ...) instead of interleaving in one file."""
+    log_file = log_file.replace("{replica}", REPLICA)
     directory = os.path.dirname(log_file)
     if directory:
         os.makedirs(directory, exist_ok=True)

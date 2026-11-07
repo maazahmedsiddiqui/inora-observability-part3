@@ -8,8 +8,8 @@ info:
     (application/problem+json), Idempotency-Key support on order creation, per-IP
     fixed-window rate limiting, and W3C traceparent correlation.
 servers:
-  - url: http://localhost:5000
-    description: Local Docker Compose HTTP API container
+  - url: http://localhost:10000
+    description: Envoy HTTP listener (load-balances the HTTP API replicas)
 
 paths:
   /products:

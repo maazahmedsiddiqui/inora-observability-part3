@@ -1,11 +1,22 @@
+# Assignment 3 - Load balancing and observability.
+#
+#   clients --> Envoy (HTTP :10000, gRPC :10001) --> replicas A, B, C of `api` and of `grpc`
+#
+# The replicas are created by Compose scaling (deploy.replicas below; `docker compose up -d --scale api=3 --scale grpc=3`
+# is equivalent). Compose names the containers <project>-<service>-<n>, so:
+#     replica A = ...-1, replica B = ...-2, replica C = ...-3          (the project name is fixed on the next line)
+# The replicas publish NO host ports: all client traffic enters through Envoy, and Prometheus scrapes every
+# replica directly by its container name.
+name: inora-observability-part3
+
 services:
   api:
     build: .
-    container_name: inora-api
-    ports:
-      - "5000:5000"
+    deploy:
+      replicas: 3
     environment:
-      - LOG_FILE=/app/logs/app.log
+      - LOG_FILE=/app/logs/api-{replica}.log          # {replica} -> api-A.log, api-B.log, api-C.log
+      - REPLICA_BASE=inora-observability-part3-api    # how a container finds out whether it is -1, -2 or -3
       - INORA_DB=/app/data/inora.db
       - INORA_SEED_STOCK=100000
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-5}
@@ -13,28 +24,17 @@ services:
       - CORS_ALLOW_ORIGIN=http://localhost:8080
     volumes:
       - ./logs:/app/logs
-      - inora-data:/app/data
-
-  swagger-ui:
-    image: swaggerapi/swagger-ui:latest
-    container_name: swagger-ui
-    ports:
-      - "8080:8080"
-    environment:
-      - URL=http://localhost:5000/openapi.yaml
-    depends_on:
-      - api
+      - inora-data:/app/data                          # ONE shared SQLite file for all replicas
 
   grpc:
     build:
       context: .
       dockerfile: Dockerfile.grpc
-    container_name: inora-grpc
-    ports:
-      - "50051:50051"
-      - "9102:9102"
+    deploy:
+      replicas: 3
     environment:
-      - LOG_FILE=/app/logs/grpc.log
+      - LOG_FILE=/app/logs/grpc-{replica}.log
+      - REPLICA_BASE=inora-observability-part3-grpc
       - METRICS_PORT=9102
       - GRPC_SIMULATE_DELAY=${GRPC_SIMULATE_DELAY:-0}
       - INORA_DB=/app/data/inora.db
@@ -44,6 +44,33 @@ services:
       - inora-data:/app/data
     depends_on:
       - api
+
+  envoy:
+    image: envoyproxy/envoy:v1.39.1
+    container_name: envoy
+    environment:
+      - ENVOY_UID=0                                   # run as root so it can write the access log into ./logs
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    ports:
+      - "10000:10000"                                 # HTTP listener
+      - "10001:10001"                                 # gRPC listener (HTTP/2)
+      - "9901:9901"                                   # admin + Prometheus metrics (/stats/prometheus)
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./logs:/logs                                  # JSON access log -> Filebeat -> Elasticsearch
+    depends_on:
+      - api
+      - grpc
+
+  swagger-ui:                                         # carried over from Assignment 2; now talks to the API through Envoy
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - URL=http://localhost:10000/openapi.yaml
+    depends_on:
+      - envoy
 
   prometheus:
     image: prom/prometheus:latest

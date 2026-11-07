@@ -3,7 +3,7 @@
 Each request carries the same W3C trace id over HTTP (header) and gRPC (metadata), so the logs from the two
 services can be joined in Kibana. Then it proves both front doors share one source of truth.
 
-Run (HTTP API on :5000 and gRPC service on :50051 must be up):
+Run (Envoy must be up: HTTP on :10000, gRPC on :10001):
   python demo_http_vs_grpc.py
 """
 import secrets
@@ -15,8 +15,8 @@ import requests
 from grpc_client import describe_error, place_order
 from inora_obs import make_traceparent
 
-HTTP = "http://127.0.0.1:5000"
-GRPC = "127.0.0.1:50051"
+HTTP = "http://127.0.0.1:10000"
+GRPC = "127.0.0.1:10001"
 
 
 def via_http(body, key, tp):

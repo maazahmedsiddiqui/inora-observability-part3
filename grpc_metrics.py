@@ -16,6 +16,8 @@ import grpc
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 from prometheus_client.core import GaugeMetricFamily
 
+from inora_obs import REPLICA
+
 GRPC_REGISTRY = CollectorRegistry()
 
 # Same bucket edges as the HTTP latency histogram, so p50/p95 panels are directly comparable.
@@ -38,6 +40,12 @@ GRPC_IN_FLIGHT = Gauge(
 # Without this, orders placed over gRPC would be invisible to the business dashboard.
 BUSINESS_ORDERS = Counter(
     "business_orders_total", "Total order business outcomes by status", ["status"], registry=GRPC_REGISTRY)
+
+# Assignment 3: which replica (A, B, C) this process believes it is; Prometheus adds its own `replica` target label.
+REPLICA_INFO = Gauge(
+    "inora_replica_info", "Constant 1; the label says which replica (A, B, C) this process believes it is",
+    ["reported_replica"], registry=GRPC_REGISTRY)
+REPLICA_INFO.labels(REPLICA).set(1)
 
 UNKNOWN = "unknown"      # label value for calls to methods this server does not implement (keeps labels bounded)
 

@@ -110,3 +110,80 @@ class OrderService:
             timeout,
             metadata,
             _registered_method=True)
+
+
+class CatalogServiceStub:
+    """---- Assignment 3: read-only catalogue lookup ----
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.GetProduct = channel.unary_unary(
+                '/inora.v1.CatalogService/GetProduct',
+                request_serializer=inora_dot_v1_dot_inora__pb2.GetProductRequest.SerializeToString,
+                response_deserializer=inora_dot_v1_dot_inora__pb2.GetProductResponse.FromString,
+                _registered_method=True)
+
+
+class CatalogServiceServicer:
+    """---- Assignment 3: read-only catalogue lookup ----
+    """
+
+    def GetProduct(self, request, context):
+        """Returns one product. Unary. NOT_FOUND for an unknown product id.
+        Server initial metadata: traceparent, x-replica (which replica answered).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_CatalogServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'GetProduct': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetProduct,
+                    request_deserializer=inora_dot_v1_dot_inora__pb2.GetProductRequest.FromString,
+                    response_serializer=inora_dot_v1_dot_inora__pb2.GetProductResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'inora.v1.CatalogService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('inora.v1.CatalogService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class CatalogService:
+    """---- Assignment 3: read-only catalogue lookup ----
+    """
+
+    @staticmethod
+    def GetProduct(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/inora.v1.CatalogService/GetProduct',
+            inora_dot_v1_dot_inora__pb2.GetProductRequest.SerializeToString,
+            inora_dot_v1_dot_inora__pb2.GetProductResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)

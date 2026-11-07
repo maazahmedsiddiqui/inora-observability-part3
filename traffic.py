@@ -3,7 +3,7 @@ import time
 import uuid
 import requests
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = "http://127.0.0.1:10000"
 PRODUCTS = ["clover-pendant", "minimalist-ring", "pearl-bracelet"]
 
 while True:

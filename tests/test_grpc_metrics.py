@@ -130,7 +130,8 @@ def test_stock_collector_reads_the_shared_database(tmp_path):
 
 
 def test_label_names_are_bounded_no_ids():
-    allowed = {"grpc_service", "grpc_method", "grpc_code", "status", "le", "product_id"}
+    allowed = {"grpc_service", "grpc_method", "grpc_code", "status", "le", "product_id",
+               "reported_replica"}      # A3: replica name (A/B/C), at most a handful of values
     names = set()
     for metric in m.GRPC_REGISTRY.collect():
         for sample in metric.samples:

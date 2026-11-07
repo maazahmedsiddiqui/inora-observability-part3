@@ -19,8 +19,8 @@ import requests
 from grpc_client import describe_error, place_order
 from inora_obs import make_traceparent
 
-HTTP = "http://127.0.0.1:5000"
-GRPC = "127.0.0.1:50051"
+HTTP = "http://127.0.0.1:10000"
+GRPC = "127.0.0.1:10001"
 
 CASES = (
     [("success", "clover-pendant", 1, "tok_visa")] * 3

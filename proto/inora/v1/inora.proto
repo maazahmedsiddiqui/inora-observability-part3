@@ -1,6 +1,9 @@
-// Inora order service (Assignment 2, Part B).
+// Inora gRPC services (Assignment 2 Part B, extended in Assignment 3).
 //
-// One operation - PlaceOrder - is offered over gRPC. The HTTP API (POST /orders) keeps working.
+// Assignment 2: PlaceOrder (a write). Assignment 3 adds GetProduct, a read-only unary call used as the
+// load-balancing test traffic (no rate limit, no database write lock).
+//
+// One operation - PlaceOrder - was offered over gRPC in Assignment 2. The HTTP API (POST /orders) keeps working.
 // Both call the same business module (inora_core.Store) and the same SQLite database.
 //
 // Generate the Python code from the project root with:
@@ -38,6 +41,28 @@ message PlaceOrderRequest {
 message PlaceOrderResponse {
   Order order = 1;
   bool replayed = 2;             // true when an earlier identical request already created this order
+}
+
+// ---- Assignment 3: read-only catalogue lookup ----
+service CatalogService {
+  // Returns one product. Unary. NOT_FOUND for an unknown product id.
+  // Server initial metadata: traceparent, x-replica (which replica answered).
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message GetProductResponse {
+  Product product = 1;
+}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  int64 price_pkr = 3;
+  int32 stock = 4;
 }
 
 message Order {

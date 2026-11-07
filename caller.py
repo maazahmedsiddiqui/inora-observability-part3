@@ -95,7 +95,7 @@ class Result:
 
 # ---------------------------------------------------------------- the caller
 class InoraClient:
-    def __init__(self, base_url="http://127.0.0.1:5000", settings=Settings(), session=None,
+    def __init__(self, base_url="http://127.0.0.1:10000", settings=Settings(), session=None,
                  sleep=time.sleep, clock=time.monotonic, rng=random.random, log=print):
         self.base_url = base_url.rstrip("/")
         self.s = settings
@@ -266,7 +266,7 @@ def scenario_ratelimit(c: InoraClient):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--base-url", default="http://127.0.0.1:5000")   # 127.0.0.1, not localhost: avoids slow IPv6 fallback on Windows
+    ap.add_argument("--base-url", default="http://127.0.0.1:10000")   # 127.0.0.1, not localhost: avoids slow IPv6 fallback on Windows
     ap.add_argument("--scenario", choices=["reliability", "ratelimit"], required=True)
     args = ap.parse_args()
     if args.scenario == "ratelimit":

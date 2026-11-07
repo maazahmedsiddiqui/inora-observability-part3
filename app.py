@@ -8,7 +8,7 @@ from flask import Flask, Response, jsonify, request
 from prometheus_client import Counter, Gauge, Histogram, Summary, generate_latest
 from werkzeug.exceptions import HTTPException
 
-from inora_obs import setup_file_logging
+from inora_obs import REPLICA, setup_file_logging
 
 from inora_core import (
     DomainError,
@@ -56,11 +56,22 @@ RATE_LIMIT_DECISIONS = Counter(
     "Rate limiter decisions on POST /orders",
     ["decision"],
 )
+# Assignment 3: the replica identity this process reports about itself (A, B, C). Prometheus also attaches a
+# `replica` target label from its scrape config; the two must agree. Label values: at most a handful.
+REPLICA_INFO = Gauge(
+    "inora_replica_info",
+    "Constant 1; the label says which replica (A, B, C) this process believes it is",
+    ["reported_replica"],
+)
+REPLICA_INFO.labels(REPLICA).set(1)
 
 # ---------------- Rate Limiter (Fixed Window per Client IP) ----------------
 class FixedWindowRateLimiter:
-    """Single-instance thread-safe fixed-window counter per client IP.
-    Default: 5 requests per 10-second window per client IP."""
+    """Thread-safe fixed-window counter per client IP, kept in THIS PROCESS's memory.
+    Default: 5 requests per 10-second window per client IP.
+
+    Assignment 3: with several replicas every replica has its own counters (they are NOT shared), so the
+    effective limit a client sees depends on how requests are spread across replicas (see the report)."""
 
     def __init__(self, limit=5, window_seconds=10):
         self.limit = limit
@@ -159,12 +170,13 @@ def create_app(db_path=None, rate_limit=None, rate_window=None):
     @app.after_request
     def _after(response):
         response.headers["traceparent"] = getattr(request, "_traceparent", "")
+        response.headers["X-Replica"] = REPLICA          # which replica answered (A3)
         if cors_origin:
             response.headers["Access-Control-Allow-Origin"] = cors_origin
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Idempotency-Key, traceparent"
             response.headers["Access-Control-Expose-Headers"] = (
-                "Location, Idempotent-Replayed, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, traceparent")
+                "Location, Idempotent-Replayed, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, traceparent, X-Replica")
         if request.path != "/metrics":
             ACTIVE_REQUESTS.dec()
             # Use route template (e.g. /orders/<order_id>) so path IDs never become labels

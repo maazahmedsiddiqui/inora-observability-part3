@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14inora/v1/inora.proto\x12\x08inora.v1\"i\n\x11PlaceOrderRequest\x12\x12\n\nproduct_id\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\x05\x12\x15\n\rpayment_token\x18\x03 \x01(\t\x12\x17\n\x0fidempotency_key\x18\x04 \x01(\t\"F\n\x12PlaceOrderResponse\x12\x1e\n\x05order\x18\x01 \x01(\x0b\x32\x0f.inora.v1.Order\x12\x10\n\x08replayed\x18\x02 \x01(\x08\"p\n\x05Order\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\x12\x11\n\ttotal_pkr\x18\x04 \x01(\x03\x12\x0e\n\x06status\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t2W\n\x0cOrderService\x12G\n\nPlaceOrder\x12\x1b.inora.v1.PlaceOrderRequest\x1a\x1c.inora.v1.PlaceOrderResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14inora/v1/inora.proto\x12\x08inora.v1\"i\n\x11PlaceOrderRequest\x12\x12\n\nproduct_id\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\x05\x12\x15\n\rpayment_token\x18\x03 \x01(\t\x12\x17\n\x0fidempotency_key\x18\x04 \x01(\t\"F\n\x12PlaceOrderResponse\x12\x1e\n\x05order\x18\x01 \x01(\x0b\x32\x0f.inora.v1.Order\x12\x10\n\x08replayed\x18\x02 \x01(\x08\"\'\n\x11GetProductRequest\x12\x12\n\nproduct_id\x18\x01 \x01(\t\"8\n\x12GetProductResponse\x12\"\n\x07product\x18\x01 \x01(\x0b\x32\x11.inora.v1.Product\"E\n\x07Product\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x11\n\tprice_pkr\x18\x03 \x01(\x03\x12\r\n\x05stock\x18\x04 \x01(\x05\"p\n\x05Order\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\x12\x11\n\ttotal_pkr\x18\x04 \x01(\x03\x12\x0e\n\x06status\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t2W\n\x0cOrderService\x12G\n\nPlaceOrder\x12\x1b.inora.v1.PlaceOrderRequest\x1a\x1c.inora.v1.PlaceOrderResponse2Y\n\x0e\x43\x61talogService\x12G\n\nGetProduct\x12\x1b.inora.v1.GetProductRequest\x1a\x1c.inora.v1.GetProductResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,8 +35,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PLACEORDERREQUEST']._serialized_end=139
   _globals['_PLACEORDERRESPONSE']._serialized_start=141
   _globals['_PLACEORDERRESPONSE']._serialized_end=211
-  _globals['_ORDER']._serialized_start=213
-  _globals['_ORDER']._serialized_end=325
-  _globals['_ORDERSERVICE']._serialized_start=327
-  _globals['_ORDERSERVICE']._serialized_end=414
+  _globals['_GETPRODUCTREQUEST']._serialized_start=213
+  _globals['_GETPRODUCTREQUEST']._serialized_end=252
+  _globals['_GETPRODUCTRESPONSE']._serialized_start=254
+  _globals['_GETPRODUCTRESPONSE']._serialized_end=310
+  _globals['_PRODUCT']._serialized_start=312
+  _globals['_PRODUCT']._serialized_end=381
+  _globals['_ORDER']._serialized_start=383
+  _globals['_ORDER']._serialized_end=495
+  _globals['_ORDERSERVICE']._serialized_start=497
+  _globals['_ORDERSERVICE']._serialized_end=584
+  _globals['_CATALOGSERVICE']._serialized_start=586
+  _globals['_CATALOGSERVICE']._serialized_end=675
 # @@protoc_insertion_point(module_scope)
