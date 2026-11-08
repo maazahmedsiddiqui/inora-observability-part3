@@ -1,0 +1,10 @@
+
+Run a-only-http (http)  2026-11-08T15:34:50Z -> 2026-11-08T15:35:50Z   sent 2400  ok 2400  failed 0  client p95 38.94 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A             100.0        2400  100.0   +0.0       2400  100.0   +0.0    2400  100.0
+B               0.0           0    0.0   +0.0          0    0.0   +0.0       0    0.0
+C               0.0           0    0.0   +0.0          0    0.0   +0.0       0    0.0
+total                      2400                     2400                  2400
+
+CHECK: sent == prometheus total == envoy log total -> PASS
+written evidence\a-only\http-run.report.json

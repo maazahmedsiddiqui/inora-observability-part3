@@ -1,0 +1,39 @@
+# Ships every JSON log line in ./logs to Elasticsearch: the replicas' logs (api-A.log, grpc-B.log, ...) and
+# Envoy's access log (envoy-access.log). Each line is one JSON object; its fields become document fields.
+filebeat.inputs:
+- type: filestream
+  id: inora-app-logs
+  enabled: true
+  paths:
+    - /usr/share/filebeat/logs/*.log
+  parsers:
+    - ndjson:
+        target: ""
+        add_error_key: true
+
+# Assignment 3: the replicas log a standalone `trace_id` field, but Envoy's access log only has the full W3C
+# `traceparent` string (version-traceid-spanid-flags). Cut the trace id out of it so ONE search on `trace_id`
+# returns the Envoy event together with the replica's event for the same request.
+processors:
+  - dissect:                                  # normal case: the traceparent the replica answered with
+      when:
+        equals:
+          service_name: envoy
+      tokenizer: "%{}-%{trace_id}-%{}-%{}"
+      field: "traceparent"
+      target_prefix: ""
+      ignore_failure: true
+  - dissect:                                  # no replica answered (e.g. 503): use the one the client sent, if any
+      when:
+        and:
+          - equals:
+              service_name: envoy
+          - not:
+              has_fields: ["trace_id"]
+      tokenizer: "%{}-%{trace_id}-%{}-%{}"
+      field: "request_traceparent"
+      target_prefix: ""
+      ignore_failure: true
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]

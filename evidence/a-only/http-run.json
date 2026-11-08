@@ -1,0 +1,34 @@
+{
+  "name": "a-only-http",
+  "interface": "http",
+  "target": "http://127.0.0.1:10000",
+  "operation": "GET /products/clover-pendant",
+  "product_id": "clover-pendant",
+  "started_utc": "2026-11-08T15:34:50Z",
+  "ended_utc": "2026-11-08T15:35:50Z",
+  "target_rps": 40.0,
+  "duration_s": 60.0,
+  "request_timeout_s": 5.0,
+  "retries": "none",
+  "circuit_breaker": "none",
+  "sent": 2400,
+  "completed": 2400,
+  "ok": 2400,
+  "failed": 0,
+  "error_rate_pct": 0.0,
+  "actual_send_rps": 40.0,
+  "completed_rps": 39.98,
+  "p50_ms": 8.79,
+  "p95_ms": 38.94,
+  "p99_ms": 513.07,
+  "max_ms": 825.81,
+  "max_schedule_lag_ms": 350.34,
+  "p95_schedule_lag_ms": 1.42,
+  "errors": {},
+  "client_view_replicas": {
+    "A": 2400
+  },
+  "client_view_share_pct": {
+    "A": 100.0
+  }
+}

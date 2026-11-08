@@ -62,11 +62,11 @@ Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only
 - **GATE 2 (PASSED 2026-11-08):** baseline numbers recorded, dashboard shows A-only, both log searches work.
 
 ## Phase 3 – Part C: enable load balancing
-- [~] 3.1 B and C added to Envoy HTTP cluster, equal-weight round robin
-- [~] 3.2 B and C added to Envoy gRPC cluster, round robin
-- [ ] 3.3 gRPC listener confirmed as HTTP/2 (per-call routing, not per-connection TCP)
-- [ ] 3.4 Same workload repeated for HTTP and gRPC
-- [ ] 3.5 Each replica ≈ 33 %; compare with 33 % and explain differences vs the A-only baseline
+- [x] 3.1 B and C added to Envoy HTTP cluster, equal-weight round robin
+- [x] 3.2 B and C added to Envoy gRPC cluster, round robin
+- [x] 3.3 gRPC listener confirmed as HTTP/2 (per-call routing, not per-connection TCP)
+- [x] 3.4 Same workload repeated for HTTP and gRPC
+- [x] 3.5 Each replica ≈ 33 %; compare with 33 % and explain differences vs the A-only baseline
 - [ ] 3.6 Screenshots + client results saved = **round-robin baseline for Part D**
 - **GATE 3:** ~1/3 each for both interfaces, recorded.
 

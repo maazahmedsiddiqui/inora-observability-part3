@@ -1,0 +1,15 @@
+Sending 40.0 req/s for 60.0 s (2400 requests) over http ...
+
+Run            : round-robin-http   (http, GET /products/clover-pendant)
+Target         : http://127.0.0.1:10000
+Window (UTC)   : 2026-11-08T15:37:47Z  ->  2026-11-08T15:38:47Z
+Target rate    : 40.0 req/s for 60.0 s   (retries: none, circuit breaker: none, timeout 5.0 s)
+Actual send    : 40.0 req/s   (max schedule lag 55.94 ms)
+Sent           : 2400    completed 2400
+Successes      : 2400
+Failures       : 0   (0.0 %)   
+Client latency : p50 9.05 ms   p95 31.49 ms   p99 73.84 ms   max 174.98 ms
+Client view of replicas that answered: {'A': 799, 'B': 801, 'C': 800}   shares % {'A': 33.3, 'B': 33.4, 'C': 33.3}
+
+JSON: {"name": "round-robin-http", "interface": "http", "target": "http://127.0.0.1:10000", "operation": "GET /products/clover-pendant", "product_id": "clover-pendant", "started_utc": "2026-11-08T15:37:47Z", "ended_utc": "2026-11-08T15:38:47Z", "target_rps": 40.0, "duration_s": 60.0, "request_timeout_s": 5.0, "retries": "none", "circuit_breaker": "none", "sent": 2400, "completed": 2400, "ok": 2400, "failed": 0, "error_rate_pct": 0.0, "actual_send_rps": 40.0, "completed_rps": 39.98, "p50_ms": 9.05, "p95_ms": 31.49, "p99_ms": 73.84, "max_ms": 174.98, "max_schedule_lag_ms": 55.94, "p95_schedule_lag_ms": 1.57, "errors": {}, "client_view_replicas": {"A": 799, "B": 801, "C": 800}, "client_view_share_pct": {"A": 33.3, "B": 33.4, "C": 33.3}}
+summary written to C:\Users\SBT\Enterprise Software Dev\inora-observability - PART 3\inora-observability-part3\evidence\round-robin\http-run.json

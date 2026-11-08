@@ -1,0 +1,6 @@
+trace_id 5deb2dffac99be7aa712c13f7d9002c8: 2 event(s)
+
+  REPLICA  replica=A  service=inora-http-api  endpoint=/products/<product_id>  severity=INFO  message='Fetched product clover-pendant'
+  ENVOY    replica=A  http GET /products/clover-pendant  response_code=200 grpc_status=None  duration=7 ms  upstream=http_backend 172.19.0.3:5000
+
+PASS: the search returns the Envoy event together with the replica's event

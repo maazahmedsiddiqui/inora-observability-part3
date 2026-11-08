@@ -1,0 +1,4 @@
+replica A: {201: 5}
+replica B: {201: 5}
+replica C: {201: 5}
+total: {201: 15}   (201 = accepted, 429 = rate limited)

@@ -1,0 +1,15 @@
+NAME                               IMAGE                                                  COMMAND                  SERVICE         CREATED        STATUS          PORTS
+elasticsearch                      docker.elastic.co/elasticsearch/elasticsearch:8.12.0   "/bin/tini -- /usr/l…"   elasticsearch   16 hours ago   Up 16 hours     0.0.0.0:9200->9200/tcp, [::]:9200->9200/tcp
+envoy                              envoyproxy/envoy:v1.39.1                               "/docker-entrypoint.…"   envoy           16 hours ago   Up 2 minutes    0.0.0.0:9901->9901/tcp, [::]:9901->9901/tcp, 0.0.0.0:10000-10001->10000-10001/tcp, [::]:10000-10001->10000-10001/tcp
+filebeat                           docker.elastic.co/beats/filebeat:8.12.0                "/usr/bin/tini -- /u…"   filebeat        16 hours ago   Up 39 seconds   
+grafana                            grafana/grafana:latest                                 "/run.sh"                grafana         16 hours ago   Up 15 hours     0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+inora-observability-part3-api-1    inora-observability-part3-api                          "python app.py"          api             16 hours ago   Up 16 hours     5000/tcp
+inora-observability-part3-api-2    inora-observability-part3-api                          "python app.py"          api             16 hours ago   Up 16 hours     5000/tcp
+inora-observability-part3-api-3    inora-observability-part3-api                          "python app.py"          api             16 hours ago   Up 16 hours     5000/tcp
+inora-observability-part3-grpc-1   inora-observability-part3-grpc                         "python grpc_server.…"   grpc            16 hours ago   Up 16 hours     9102/tcp, 50051/tcp
+inora-observability-part3-grpc-2   inora-observability-part3-grpc                         "python grpc_server.…"   grpc            16 hours ago   Up 16 hours     9102/tcp, 50051/tcp
+inora-observability-part3-grpc-3   inora-observability-part3-grpc                         "python grpc_server.…"   grpc            16 hours ago   Up 16 hours     9102/tcp, 50051/tcp
+kibana                             docker.elastic.co/kibana/kibana:8.12.0                 "/bin/tini -- /usr/l…"   kibana          16 hours ago   Up 16 hours     0.0.0.0:5601->5601/tcp, [::]:5601->5601/tcp
+node-exporter                      prom/node-exporter:latest                              "/bin/node_exporter …"   node-exporter   16 hours ago   Up 16 hours     0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+prometheus                         prom/prometheus:latest                                 "/bin/prometheus --c…"   prometheus      16 hours ago   Up 16 hours     0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+swagger-ui                         swaggerapi/swagger-ui:latest                           "/docker-entrypoint.…"   swagger-ui      16 hours ago   Up 16 hours     0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp

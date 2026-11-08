@@ -1,0 +1,137 @@
+# Assignment 3 - Load balancing and observability.
+#
+#   clients --> Envoy (HTTP :10000, gRPC :10001) --> replicas A, B, C of `api` and of `grpc`
+#
+# The replicas are created by Compose scaling (deploy.replicas below; `docker compose up -d --scale api=3 --scale grpc=3`
+# is equivalent). Compose names the containers <project>-<service>-<n>, so:
+#     replica A = ...-1, replica B = ...-2, replica C = ...-3          (the project name is fixed on the next line)
+# The replicas publish NO host ports: all client traffic enters through Envoy, and Prometheus scrapes every
+# replica directly by its container name.
+name: inora-observability-part3
+
+services:
+  api:
+    build: .
+    deploy:
+      replicas: 3
+    environment:
+      - LOG_FILE=/app/logs/api-{replica}.log          # {replica} -> api-A.log, api-B.log, api-C.log
+      - REPLICA_BASE=inora-observability-part3-api    # how a container finds out whether it is -1, -2 or -3
+      - INORA_DB=/app/data/inora.db
+      - INORA_SEED_STOCK=100000
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-5}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-10}
+      - CORS_ALLOW_ORIGIN=http://localhost:8080
+    volumes:
+      - ./logs:/app/logs
+      - inora-data:/app/data                          # ONE shared SQLite file for all replicas
+
+  grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.grpc
+    deploy:
+      replicas: 3
+    environment:
+      - LOG_FILE=/app/logs/grpc-{replica}.log
+      - REPLICA_BASE=inora-observability-part3-grpc
+      - METRICS_PORT=9102
+      - GRPC_SIMULATE_DELAY=${GRPC_SIMULATE_DELAY:-0}
+      - INORA_DB=/app/data/inora.db
+      - INORA_SEED_STOCK=100000
+    volumes:
+      - ./logs:/app/logs
+      - inora-data:/app/data
+    depends_on:
+      - api
+
+  envoy:
+    image: envoyproxy/envoy:v1.39.1
+    container_name: envoy
+    environment:
+      - ENVOY_UID=0                                   # run as root so it can write the access log into ./logs
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info", "--file-flush-interval-msec", "1000"]   # write the access log every 1 s (default 10 s)
+    ports:
+      - "10000:10000"                                 # HTTP listener
+      - "10001:10001"                                 # gRPC listener (HTTP/2)
+      - "9901:9901"                                   # admin + Prometheus metrics (/stats/prometheus)
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./logs:/logs                                  # JSON access log -> Filebeat -> Elasticsearch
+    depends_on:
+      - api
+      - grpc
+
+  swagger-ui:                                         # carried over from Assignment 2; now talks to the API through Envoy
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - URL=http://localhost:10000/openapi.yaml
+    depends_on:
+      - envoy
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /:/host:ro
+    command:
+      - '--path.rootfs=/host'
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.12.0
+    container_name: filebeat
+    user: root
+    command: ["-e", "--strict.perms=false"]
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/usr/share/filebeat/logs:ro
+    depends_on:
+      - elasticsearch
+
+volumes:
+  inora-data:

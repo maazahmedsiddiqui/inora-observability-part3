@@ -124,3 +124,9 @@ Explanation:
   - The earlier gRPC p95 of 223 ms (Filebeat running) is explained by Filebeat load, not by the application.
 - Log correlation proved for both interfaces (scripts/es_trace_search.py PASS; Kibana saved search `inora-a3-correlation` shows 2 rows). Envoy log field is `api_kind` (`interface` clashed with Filebeat's index template).
 - Part C tools: `envoy/stages/{a-only,round-robin}.yaml`, `scripts/envoy_stage.py` (switch + show cluster members), `scripts/run_report.py` (share per replica from Prometheus, Envoy logs in Elasticsearch, and the client; compares with expected share).
+
+## Part C results (round robin A/B/C, equal weight, 40 rps x 60 s, Filebeat stopped, 2400 sent each)
+- HTTP: 2400 ok, 0 failed. Client p50 9.56 / p95 17.77 / p99 54.49 ms. Shares A 800 / B 801 / C 799 (33.3 / 33.4 / 33.3 %). Prometheus, Envoy access logs and client agree exactly (window 08:50:51-08:51:51 UTC, runs/c-http.json).
+- gRPC: 2400 ok, 0 failed. Client p50 6.89 / p95 12.5 / p99 41.18 ms. Shares 800 / 800 / 800 (33.3 % each) (window 08:51:52-08:52:52 UTC, runs/c-grpc.json). Per-call routing works because the gRPC listener is an HTTP/2-aware HTTP connection manager; the client still uses one connection.
+- Difference from A-only baseline: A went 100 % -> 33.3 %, B and C 0 % -> 33.3 %. Client p95 stayed about the same (HTTP 18.1 -> 17.8 ms, gRPC 13.35 -> 12.5 ms) because 40 rps is far below what one replica can handle, so spreading the load does not make anything faster. Round robin gives exactly 1/3 because requests are handed out in turn.
+- Rate limit through round robin: 15 POST /orders in a row -> 15 accepted (5 on each replica), 0 rejected. A-only stage allows only 5. The limit is per replica (in memory), so the effective limit is 5 x number of replicas. This is the "what goes wrong" example for the shared-state section.

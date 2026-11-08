@@ -1,0 +1,10 @@
+
+Run round-robin-http (http)  2026-11-08T15:37:47Z -> 2026-11-08T15:38:47Z   sent 2400  ok 2400  failed 0  client p95 31.49 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              33.3         799   33.3   +0.0        799   33.3   +0.0     799   33.3
+B              33.3         801   33.4   +0.1        801   33.4   +0.1     801   33.4
+C              33.3         800   33.3   +0.0        800   33.3   +0.0     800   33.3
+total                      2400                     2400                  2400
+
+CHECK: sent == prometheus total == envoy log total -> PASS
+written evidence\round-robin\http-run.report.json

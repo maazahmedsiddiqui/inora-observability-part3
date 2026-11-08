@@ -1,0 +1,17 @@
+envoy/envoy.yaml  <-  envoy/stages/round-robin.yaml
+waiting for Envoy ...
+http_backend:
+   172.19.0.3:5000        weight=1  health=healthy
+   172.19.0.4:5000        weight=1  health=healthy
+   172.19.0.9:5000        weight=1  health=healthy
+   default_priority       weight=None  health=None
+   high_priority          weight=None  health=None
+grpc_backend:
+   172.19.0.10:50051      weight=1  health=healthy
+   172.19.0.13:50051      weight=1  health=healthy
+   172.19.0.14:50051      weight=1  health=healthy
+   default_priority       weight=None  health=None
+   high_priority          weight=None  health=None
+members: {'grpc_backend': 5, 'http_backend': 5}
+ Container envoy Restarting 
+ Container envoy Started 
