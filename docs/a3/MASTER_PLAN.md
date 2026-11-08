@@ -38,27 +38,27 @@ Both hashes must match the table.
 Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only, Prometheus targets); **1b** = proof + documents (shared-state table, architecture diagram, rate-limit baseline, idempotency evidence).
 - [x] 1.1 Decisions D1–D4 settled (see Decision log)
 - [x] 1.2 Compose rewritten for scaling (`api` and `grpc` replicas x3, no `container_name`, no fixed host ports on replicas, fixed project `name:`)
-- [~] 1.3 Replica identifier in **logs** (new `replica` field) and **metrics** (`replica` label via Prometheus relabeling)
+- [x] 1.3 Replica identifier in **logs** (new `replica` field) and **metrics** (`replica` label via Prometheus relabeling)
 - [x] 1.4 Per-replica log files so three replicas never write the same file
 - [x] 1.5 Envoy added: HTTP listener → cluster A only
 - [x] 1.6 Envoy gRPC listener → cluster A only (HTTP/2 from the start, so Part C is a one-line change)
 - [x] 1.7 B and C running but absent from Envoy clusters
-- [~] 1.8 `traceparent` still reaches the replica through Envoy (HTTP header and gRPC metadata)
-- [~] 1.9 Shared-state table written: data / rate-limit counters / idempotency records – shared or per-replica, and what breaks
-- [~] 1.10 Architecture diagram drawn
+- [x] 1.8 `traceparent` still reaches the replica through Envoy (HTTP header and gRPC metadata)
+- [x] 1.9 Shared-state table written: data / rate-limit counters / idempotency records – shared or per-replica, and what breaks
+- [x] 1.10 Architecture diagram drawn
 - [x] 1.11 Duplicate prevention proven across replicas (same Idempotency-Key sent to two different replicas → one order)
-- **GATE 1:** one HTTP call and one gRPC call through Envoy reach only A; B and C healthy and idle; diagram + shared-state table done.
+- **GATE 1 (PASSED 2026-11-08):** one HTTP call and one gRPC call through Envoy reach only A; B and C healthy and idle; diagram + shared-state table done.
 
 ## Phase 2 – Part B: observe the baseline
-- [ ] 2.1 Prometheus scrapes A, B, C and Envoy **directly** (not through Envoy's balanced route)
-- [ ] 2.2 One Grafana dashboard, HTTP and gRPC, **per replica**: request rate + share of total, active requests, p50/p95 (state window), errors by status
-- [ ] 2.3 Fixed-rate, open-loop test client (does not wait for each response before sending the next); records rate, requests sent, successes, failures, client p95
-- [ ] 2.4 Baseline run HTTP and gRPC: A = 100 %, B/C idle
-- [ ] 2.5 Envoy JSON access logs include selected replica + trace ID
-- [ ] 2.6 Filebeat ships Envoy logs to Elasticsearch
-- [ ] 2.7 One Kibana search per interface returning Envoy event **and** replica event together (screenshots)
-- [ ] 2.8 No unique IDs in metric labels (verify)
-- [ ] 2.9 Dashboard JSON exported
+- [~] 2.1 Prometheus scrapes A, B, C and Envoy **directly** (not through Envoy's balanced route)
+- [x] 2.2 One Grafana dashboard, HTTP and gRPC, **per replica**: request rate + share of total, active requests, p50/p95 (state window), errors by status
+- [x] 2.3 Fixed-rate, open-loop test client (does not wait for each response before sending the next); records rate, requests sent, successes, failures, client p95
+- [~] 2.4 Baseline run HTTP and gRPC: A = 100 %, B/C idle
+- [~] 2.5 Envoy JSON access logs include selected replica + trace ID
+- [~] 2.6 Filebeat ships Envoy logs to Elasticsearch
+- [~] 2.7 One Kibana search per interface returning Envoy event **and** replica event together (screenshots)
+- [x] 2.8 No unique IDs in metric labels (verify)
+- [~] 2.9 Dashboard JSON exported
 - **GATE 2:** baseline numbers recorded, dashboard shows A-only, both log searches work.
 
 ## Phase 3 – Part C: enable load balancing
@@ -126,3 +126,20 @@ After GATE 3 (round robin working for HTTP and gRPC) we STOP and collect all Par
 5. Rate limiter is in memory per process (`app.py`) and keyed on `X-Forwarded-For`; behind Envoy the client address changes.
 6. Existing `caller.py` has retries + circuit breaker → the new load client must have neither.
 7. Envoy has to be added (HTTP listener, gRPC HTTP/2 listener, admin, JSON access log, health checks later).
+
+---
+
+## SESSION HANDOFF (written 2026-11-08, end of day 2)
+
+**Where we are:** Gate 0 and Gate 1 passed. Part B built and working on the student machine: dashboard `inora-a3-load-balancing` shows A = 100 %, B and C idle for HTTP and gRPC; `scripts/loadgen.py` baseline runs recorded in REPORT_TRACKER.md (section 4). Envoy still routes to A only (`envoy/envoy.yaml`).
+
+**Still open for Gate 2 (do first tomorrow):**
+1. Run `python scripts/es_trace_search.py --latest http` and `--latest grpc`: each must print one ENVOY and one REPLICA line and PASS. Then the same search in Kibana (`trace_id : "<id>"`, saved search `inora-a3-correlation`, created by `scripts/setup_kibana.py`; its last output line was not seen). Screenshots later at the evidence checkpoint.
+2. Understand the gRPC p95 tail (see REPORT_TRACKER observations). Plan: add `--warmup` seconds (sent but not counted) to loadgen; re-run both baselines; look at `docker stats`.
+3. Commit Part B (`git add . ; git commit -m "Part B: ..." ; git push`).
+
+**Next build (Part C):** keep Envoy stage configs as separate files in `envoy/stages/` (a-only, round-robin, weighted-2-1-1, least-request, health-check variants) with a small switch script that copies one to `envoy/envoy.yaml` and restarts Envoy; B and C added to both clusters, equal weights, gRPC listener already HTTP/2. Then run both workloads, compare each share with 33 %, rerun `scripts/ratelimit_demo.py --count 15` (expect about 15 accepted instead of 5).
+
+**Evidence checkpoint (agreed):** after Gate 3, one script re-runs A-only baseline and round robin for both interfaces and saves everything into `evidence/`, plus a screenshot list with file names.
+
+**Known notes:** Envoy `dns_refresh_rate` deprecation warning (harmless in v1.39.1); Envoy access log flushed every 1 s via `--file-flush-interval-msec`; after recreating containers wait about 10 s for Envoy's DNS; PowerShell needs `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` per window; internet is slow so build images one at a time; Grafana dashboard changes may need `docker compose restart grafana`.

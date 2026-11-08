@@ -53,8 +53,28 @@ Observation:
 Explanation:
 ```
 
+
+### Recorded runs (pre-checkpoint; final evidence runs are repeated at the evidence checkpoint)
+
+**B-baseline-http** (2026-11-08 00:14:42Z to 00:15:42Z UTC) - Envoy routes to A only
+- Target 40 req/s x 60 s; sent 2400, ok 2400, failed 0 (0 %); actual send rate 40.0 req/s (max schedule lag 112 ms, p95 lag 0.9 ms)
+- Client p50 8.45 ms, p95 16.96 ms, p99 93.45 ms, max 213 ms; client view of replicas: A 100 %
+- Dashboard: A 40 req/s, share A 100 % / B 0 % / C 0 %; server p50 about 2.5 ms; server p95 peaked at 67 ms in the first window then about 5 ms; errors 0
+- Prediction was: A handles all traffic, B and C idle. Observation matches.
+
+**B-baseline-grpc** (2026-11-08 00:16:32Z to 00:17:32Z UTC) - Envoy routes to A only
+- Target 40 req/s x 60 s; sent 2400, ok 2400, failed 0 (0 %); actual send rate 40.0 req/s (max schedule lag 172 ms, p95 lag 8.6 ms)
+- Client p50 6.93 ms, p95 222.76 ms, p99 502.86 ms, max 827.66 ms; client view of replicas: A 100 %
+- Dashboard: A 41 req/s max, share A 100 %; server p50 about 3.5 ms; **server p95 peaked at 169 ms**; active requests peaked at 5; errors 0
+- A second gRPC run (B-baseline-grpc-2, about 05:25 local) showed the same pattern: server p95 rising to 169 ms near the start of the run, p50 about 3.3 ms, Envoy grpc_in in-flight peaking at 14.
+
+**Observations to explain in the report**
+1. The gRPC p95 tail is INSIDE the replica (server-side p95 169 ms is consistent with client p95 223 ms), concentrated at the start of each run; p50 stays about 3 ms. HTTP shows the same shape but milder (67 ms). Candidate causes (not yet tested): warm-up / CPU contention on the laptop's Docker VM (Elasticsearch, Kibana, Filebeat, 6 replicas), gRPC server thread pool (10 workers) queueing, log shipping at run start. Planned: add an unmeasured warm-up phase to loadgen and re-measure; check `docker stats` during a run.
+2. `Active requests` is sampled at each 5 s scrape, so with 2-3 ms requests it reads 0 for HTTP even under load. It only becomes visible when requests are slow (Part D delay on B). Say so in the report.
+3. gRPC all through ONE client channel, all answered by A, Envoy sees http_backend and grpc_backend healthy members = 1 each (A only).
+
 ## 5. Baselines
-- [ ] Part B baseline HTTP (A only) · [ ] Part B baseline gRPC (A only)
+- [x] Part B baseline HTTP (A only, recorded above) · [x] Part B baseline gRPC (A only, recorded above; tail latency to explain)
 - [ ] Part C round-robin HTTP · [ ] Part C round-robin gRPC
 - [ ] Comparison of each share with 33 % and explanation of differences
 
