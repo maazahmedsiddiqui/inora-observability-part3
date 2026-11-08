@@ -114,3 +114,13 @@ Explanation:
 | 2026-11-07 | Baseline stack verified on the student machine: 95 tests pass, containers up, HTTP + gRPC smoke test OK. |
 | 2026-11-07 | Decisions D1–D6 (see MASTER_PLAN.md): per-replica rate limit kept + explained; read-only gRPC `GetProduct` added; replicas A/B/C = containers 1/2/3; Envoy v1.39.1; fault injection via shared fault file (Phase 4). |
 | 2026-11-07 | Reused work to cite: Assignment 1 (observability stack), Assignment 2 (HTTP API, gRPC, metrics). |
+
+
+## Added 2026-11-08 (measurement rule and clean baselines)
+- **Measurement rule:** Filebeat is stopped during every measured load run and started again afterwards (it then ships the logs). Reason: on this 4-core laptop Filebeat reading logs during a run raised gRPC client p95 from about 12 ms to 49-223 ms (p99 28 ms -> 337 ms). Mention in the report (method / limitations).
+- Clean baselines (Filebeat stopped, A only, 40 rps x 60 s, 2400 sent, 0 failures):
+  - HTTP  `GET /products/clover-pendant`: client p50 9.69 / p95 18.1 / p99 100.18 ms, 100 % to A (window 08:44:57-08:45:57 UTC, runs/b-http.json)
+  - gRPC `GetProduct`: client p50 7.45 / p95 13.35 / p99 24.26 ms, 100 % to A (window 08:45:58-08:46:58 UTC, runs/b-grpc.json)
+  - The earlier gRPC p95 of 223 ms (Filebeat running) is explained by Filebeat load, not by the application.
+- Log correlation proved for both interfaces (scripts/es_trace_search.py PASS; Kibana saved search `inora-a3-correlation` shows 2 rows). Envoy log field is `api_kind` (`interface` clashed with Filebeat's index template).
+- Part C tools: `envoy/stages/{a-only,round-robin}.yaml`, `scripts/envoy_stage.py` (switch + show cluster members), `scripts/run_report.py` (share per replica from Prometheus, Envoy logs in Elasticsearch, and the client; compares with expected share).

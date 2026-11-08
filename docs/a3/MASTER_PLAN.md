@@ -50,20 +50,20 @@ Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only
 - **GATE 1 (PASSED 2026-11-08):** one HTTP call and one gRPC call through Envoy reach only A; B and C healthy and idle; diagram + shared-state table done.
 
 ## Phase 2 – Part B: observe the baseline
-- [~] 2.1 Prometheus scrapes A, B, C and Envoy **directly** (not through Envoy's balanced route)
+- [x] 2.1 Prometheus scrapes A, B, C and Envoy **directly** (not through Envoy's balanced route)
 - [x] 2.2 One Grafana dashboard, HTTP and gRPC, **per replica**: request rate + share of total, active requests, p50/p95 (state window), errors by status
 - [x] 2.3 Fixed-rate, open-loop test client (does not wait for each response before sending the next); records rate, requests sent, successes, failures, client p95
-- [~] 2.4 Baseline run HTTP and gRPC: A = 100 %, B/C idle
-- [~] 2.5 Envoy JSON access logs include selected replica + trace ID
-- [~] 2.6 Filebeat ships Envoy logs to Elasticsearch
-- [~] 2.7 One Kibana search per interface returning Envoy event **and** replica event together (screenshots)
+- [x] 2.4 Baseline run HTTP and gRPC: A = 100 %, B/C idle
+- [x] 2.5 Envoy JSON access logs include selected replica + trace ID
+- [x] 2.6 Filebeat ships Envoy logs to Elasticsearch
+- [x] 2.7 One Kibana search per interface returning Envoy event **and** replica event together (screenshots)
 - [x] 2.8 No unique IDs in metric labels (verify)
-- [~] 2.9 Dashboard JSON exported
-- **GATE 2:** baseline numbers recorded, dashboard shows A-only, both log searches work.
+- [x] 2.9 Dashboard JSON exported
+- **GATE 2 (PASSED 2026-11-08):** baseline numbers recorded, dashboard shows A-only, both log searches work.
 
 ## Phase 3 – Part C: enable load balancing
-- [ ] 3.1 B and C added to Envoy HTTP cluster, equal-weight round robin
-- [ ] 3.2 B and C added to Envoy gRPC cluster, round robin
+- [~] 3.1 B and C added to Envoy HTTP cluster, equal-weight round robin
+- [~] 3.2 B and C added to Envoy gRPC cluster, round robin
 - [ ] 3.3 gRPC listener confirmed as HTTP/2 (per-call routing, not per-connection TCP)
 - [ ] 3.4 Same workload repeated for HTTP and gRPC
 - [ ] 3.5 Each replica ≈ 33 %; compare with 33 % and explain differences vs the A-only baseline

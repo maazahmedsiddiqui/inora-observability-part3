@@ -1,0 +1,34 @@
+{
+  "run": "C-roundrobin-http",
+  "rows": {
+    "A": {
+      "expected_pct": 33.3,
+      "prometheus": 800,
+      "prometheus_pct": 33.3,
+      "envoy_log": 800,
+      "envoy_log_pct": 33.3,
+      "client": 800,
+      "client_pct": 33.3
+    },
+    "B": {
+      "expected_pct": 33.3,
+      "prometheus": 801,
+      "prometheus_pct": 33.4,
+      "envoy_log": 801,
+      "envoy_log_pct": 33.4,
+      "client": 801,
+      "client_pct": 33.4
+    },
+    "C": {
+      "expected_pct": 33.3,
+      "prometheus": 799,
+      "prometheus_pct": 33.3,
+      "envoy_log": 799,
+      "envoy_log_pct": 33.3,
+      "client": 799,
+      "client_pct": 33.3
+    }
+  },
+  "envoy_log_total": 2400,
+  "counts_match_sent": true
+}

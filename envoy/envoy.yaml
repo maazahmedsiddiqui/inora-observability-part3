@@ -1,6 +1,6 @@
 # Envoy configuration - Assignment 3.
-# STAGE: A-ONLY  (Part A and Part B baseline). HTTP and gRPC both go to replica A only.
-#   Replica A = container ...-1. B and C are running but are not listed in any cluster.
+# STAGE: ROUND-ROBIN  (Part C). HTTP and gRPC both go to replicas A, B and C, equal weight, round robin.
+#   Replica A = container ...-1, B = ...-2, C = ...-3.
 #
 # Ports inside the container:  10000 = HTTP listener, 10001 = gRPC listener, 9901 = admin.
 #
@@ -132,6 +132,12 @@ static_resources:
               - endpoint:
                   address:
                     socket_address: { address: inora-observability-part3-api-1, port_value: 5000 }   # A
+              - endpoint:
+                  address:
+                    socket_address: { address: inora-observability-part3-api-2, port_value: 5000 }   # B
+              - endpoint:
+                  address:
+                    socket_address: { address: inora-observability-part3-api-3, port_value: 5000 }   # C
 
     # ------------------------------------------------------------------ gRPC backend: replica A only
     - name: grpc_backend
@@ -159,3 +165,9 @@ static_resources:
               - endpoint:
                   address:
                     socket_address: { address: inora-observability-part3-grpc-1, port_value: 50051 }   # A
+              - endpoint:
+                  address:
+                    socket_address: { address: inora-observability-part3-grpc-2, port_value: 50051 }   # B
+              - endpoint:
+                  address:
+                    socket_address: { address: inora-observability-part3-grpc-3, port_value: 50051 }   # C

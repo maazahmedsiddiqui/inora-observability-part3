@@ -1,0 +1,38 @@
+{
+  "name": "C-roundrobin-http",
+  "interface": "http",
+  "target": "http://127.0.0.1:10000",
+  "operation": "GET /products/clover-pendant",
+  "product_id": "clover-pendant",
+  "started_utc": "2026-11-08T08:50:51Z",
+  "ended_utc": "2026-11-08T08:51:51Z",
+  "target_rps": 40.0,
+  "duration_s": 60.0,
+  "request_timeout_s": 5.0,
+  "retries": "none",
+  "circuit_breaker": "none",
+  "sent": 2400,
+  "completed": 2400,
+  "ok": 2400,
+  "failed": 0,
+  "error_rate_pct": 0.0,
+  "actual_send_rps": 40.0,
+  "completed_rps": 39.98,
+  "p50_ms": 9.56,
+  "p95_ms": 17.77,
+  "p99_ms": 54.49,
+  "max_ms": 153.14,
+  "max_schedule_lag_ms": 33.26,
+  "p95_schedule_lag_ms": 0.78,
+  "errors": {},
+  "client_view_replicas": {
+    "A": 800,
+    "B": 801,
+    "C": 799
+  },
+  "client_view_share_pct": {
+    "A": 33.3,
+    "B": 33.4,
+    "C": 33.3
+  }
+}
