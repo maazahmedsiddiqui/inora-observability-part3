@@ -1,4 +1,4 @@
-flowchart TB
+flowchart LR
     client["Test client<br/>HTTP :10000 &nbsp;|&nbsp; gRPC :10001"]
     envoy["<b>Envoy v1.39.1</b><br/>HTTP listener :10000<br/>gRPC listener :10001 (HTTP/2)<br/>admin + metrics :9901"]
 
@@ -24,8 +24,8 @@ flowchart TB
     kb["Kibana"]
 
     client --> envoy
-    envoy -->|"Parts A, B: only A<br/>Part C on: A, B, C"| http
-    envoy -->|"Parts A, B: only A<br/>Part C on: A, B, C"| grpcs
+    envoy -->|"stage a-only: only A<br/>other stages: A, B, C"| http
+    envoy -->|"stage a-only: only A<br/>other stages: A, B, C"| grpcs
     http --> db
     grpcs --> db
     http -->|"JSON logs"| logs

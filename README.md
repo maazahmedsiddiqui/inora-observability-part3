@@ -1,232 +1,170 @@
-# Inora - Assignment 2: HTTP API, gRPC service and metrics
+# Inora - Assignment 3: Load Balancing and Observability
 
-Enterprise Software Development, Fall 2026. Extends the Assignment 1 observability project (Part 1 repo: `inora-observability`, unchanged).
+Enterprise Software Development, Fall 2026. Extends Assignment 2 (`inora-observability-part2`) and Assignment 1
+(`inora-observability`); both are unchanged. The HTTP API, gRPC service, shared business code and observability
+stack come from those assignments (reused work, see the end of this file).
 
-Inora is a jewellery store. The task chosen for this assignment is **placing an order**. It is offered over two front doors that share the same business rules and the same database:
+Three replicas (A, B, C) of the HTTP API and of the gRPC service run behind **Envoy**. Prometheus scrapes A, B, C and
+Envoy directly; Filebeat ships replica and Envoy logs to Elasticsearch/Kibana; one Grafana dashboard shows every
+replica. Test traffic: `GET /products/{id}` (HTTP) and `inora.v1.CatalogService/GetProduct` (unary gRPC), both read-only.
 
-| | HTTP (Part A) | gRPC (Part B) |
-|---|---|---|
-| Operation | `POST /orders` | `inora.v1.OrderService/PlaceOrder` |
-| Container | `inora-api` (Flask, port 5000) | `inora-grpc` (port 50051, metrics 9102) |
-| Business rules | `inora_core.Store.place_order` | the same `inora_core.Store.place_order` |
-| Data | one SQLite file on the shared `inora-data` volume | the same file |
+* **Report:** `report/REPORT.pdf` (and `report/REPORT.md`)
+* **Results of every run:** `evidence/summary-table.md`, screenshots and raw outputs in `evidence/`
+* **Architecture and shared state:** `docs/a3/architecture.png`, `docs/a3/SHARED_STATE.md`
+* **Dashboard (exported JSON):** `grafana/dashboards/inora-a3-load-balancing.json` (uid `inora-a3-load-balancing`)
 
-Part C adds Prometheus metrics for the gRPC service and a Grafana dashboard that shows HTTP and gRPC side by side.
-
-## Contents
-
-1. [Prerequisites](#1-prerequisites)
-2. [Start everything](#2-start-everything)
-3. [Where things run](#3-where-things-run)
-4. [Run and test](#4-run-and-test)
-5. [API reference](#5-api-reference)
-6. [Reliability and rate limiting](#6-reliability-and-rate-limiting)
-7. [gRPC service](#7-grpc-service)
-8. [Metrics and dashboard](#8-metrics-and-dashboard)
-9. [Project layout](#9-project-layout)
-10. [Demo switches](#10-demo-switches)
-11. [Evidence](#11-evidence)
-12. [Sources and notes](#12-sources-and-notes)
-
-## 1. Prerequisites
-
-* Docker Desktop (running)
-* Python 3.10+ (developed on 3.14) and PowerShell (commands below are PowerShell; on bash, activate with `source venv/bin/activate`)
+## 1. Setup (Windows PowerShell; Docker Desktop and Python 3.12 installed)
 
 ```powershell
+git clone https://github.com/maazahmedsiddiqui/inora-observability-part3.git
+cd inora-observability-part3
 python -m venv venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-grpc.txt -r requirements-dev.txt
+python -m pytest -q                      # expect: 127 passed
+docker compose build api                 # build one at a time on a slow connection
+docker compose build grpc
+docker compose up -d                     # 14 containers
+Start-Sleep -Seconds 20
+python scripts/envoy_stage.py round-robin    # checks the Envoy config, shows the members of both clusters
+python scripts/probe_replicas.py             # quick check that A, B, C all answer
+python scripts/setup_kibana.py               # once, after the first requests: Kibana data view + saved search
 ```
 
-## 2. Start everything
-
-```powershell
-docker compose up -d --build
-docker compose ps
-```
-
-Nine containers start: `inora-api`, `inora-grpc`, `swagger-ui`, `prometheus`, `grafana`, `node-exporter`, `elasticsearch`, `kibana`, `filebeat`. The first build takes a few minutes. If you change `prometheus.yml`, run `docker compose restart prometheus`.
-
-Stop with `docker compose down` (add `-v` only to wipe the database and start from the seed data).
-
-## 3. Where things run
-
-| What | URL / address |
+| What | Where |
 |---|---|
-| HTTP API | http://localhost:5000 (spec at `/openapi.yaml`, metrics at `/metrics`) |
-| Swagger UI (try the API from the spec) | http://localhost:8080 |
-| gRPC service | `127.0.0.1:50051` |
-| gRPC metrics | http://localhost:9102/metrics |
-| Prometheus | http://localhost:9090 (targets: `/targets`) |
-| Grafana | http://localhost:3000 (`admin` / `admin`) - dashboard **Inora - HTTP vs gRPC (Assignment 2)** in folder *Inora* |
-| Kibana | http://localhost:5601 (data view `Filebeat Logs`) |
+| Envoy HTTP / gRPC (send test traffic here) | `http://localhost:10000` / `localhost:10001` |
+| Envoy admin and metrics | `http://localhost:9901` |
+| Prometheus (targets page) | `http://localhost:9090/targets` |
+| Grafana (login admin / admin) | `http://localhost:3000/d/inora-a3-load-balancing` |
+| Kibana (saved search `inora-a3-correlation`) | `http://localhost:5601/app/discover#/view/inora-a3-correlation` |
 
-The Grafana data source and the Assignment 2 dashboard are provisioned from `grafana/`, so they appear automatically. The Part 1 dashboard (`grafana_dashboard.json`) can still be imported by hand.
+Replica names: A = container `inora-observability-part3-api-1` / `-grpc-1`, B = `-2`, C = `-3`.
+Every replica puts its letter in its logs (`replica`), the `X-Replica` response header / gRPC `x-replica` metadata and
+the `replica` metric label.
 
-## 4. Run and test
+## 2. The fixed-rate test client
 
-Unit, API, contract, gRPC and metrics tests (no containers needed):
+`scripts/loadgen.py` sends request *i* at `t0 + i / rate` **without waiting for earlier responses** (open loop), with
+no retries. It records target rate, requests sent, successes, failures (by cause), client p50/p95/p99, the replica that
+answered each request and a per-second timeline.
 
 ```powershell
-python -m pytest -v
+python scripts/loadgen.py --interface http --rate 40 --duration 60 --name my-run --json-out runs/my-run.json
+python scripts/loadgen.py --interface grpc --rate 40 --duration 60 --name my-run --json-out runs/my-run-grpc.json
+python scripts/run_report.py runs/my-run.json                 # shares per replica: Prometheus vs Envoy log vs client
+python scripts/run_report.py runs/my-run.json --expect A=50,B=25,C=25
 ```
-Expected: **95 passed**. (`pytest.ini` limits collection to `tests/`, so the Part 1 experiment script `cardinality_test.py` is not run.)
 
-| Test file | Covers |
+**Rule for every measured run: stop Filebeat while the load runs, start it again afterwards** (it then ships the logs).
+On a small laptop, log shipping during a run raised the gRPC client p95 from about 12 ms to 49-223 ms.
+
+## 3. Experiments (commands)
+
+Envoy configurations live in `envoy/stages/`; `scripts/envoy_stage.py <stage>` checks one with Envoy's own validator,
+copies it to `envoy/envoy.yaml` and restarts Envoy. Stages: `a-only`, `round-robin`, `weighted-2-1-1`,
+`least-request`, `health-check`. Retries are not configured anywhere and the circuit-breaker limits are set so high
+they can never trigger.
+
+**Baseline (Part B) and round robin (Part C)**
+```powershell
+python scripts/envoy_stage.py a-only            # or: round-robin
+docker stop filebeat
+python scripts/loadgen.py --interface http --rate 40 --duration 60 --name base-http --json-out runs/base-http.json
+python scripts/loadgen.py --interface grpc --rate 40 --duration 60 --name base-grpc --json-out runs/base-grpc.json
+docker start filebeat
+python scripts/run_report.py runs/base-http.json --expect A=100,B=0,C=0     # for round-robin: no --expect
+python scripts/run_report.py runs/base-grpc.json --expect A=100,B=0,C=0
+python scripts/ratelimit_demo.py --count 15      # per-replica rate limit: 5 accepted on a-only, 15 on round-robin
+```
+
+**Experiment 1: weighted round robin 2:1:1**
+```powershell
+python scripts/envoy_stage.py weighted-2-1-1
+# same two load runs as above, then:  python scripts/run_report.py <run.json> --expect A=50,B=25,C=25
+```
+
+**Experiment 2: fixed delay on B, round robin vs least request**
+```powershell
+python scripts/fault.py set B 0.4               # +400 ms on replica B (HTTP GET /products/<id> and gRPC GetProduct)
+python scripts/envoy_stage.py round-robin       # run both loads, then:
+python scripts/envoy_stage.py least-request     # run both loads again (same delay, same workload)
+python scripts/fault.py clear                   # remove the delay
+```
+
+**Experiment 3: failure and recovery (active health checks)**
+```powershell
+python scripts/envoy_stage.py health-check
+docker stop filebeat
+python scripts/failure_test.py --interface http --json-out runs/fail-http.json
+python scripts/failure_test.py --interface grpc --json-out runs/fail-grpc.json
+docker start filebeat
+```
+`failure_test.py` runs 90 s at 40 req/s, stops B (`docker stop -t 1`) after 20 s, starts it after 45 s and prints how
+long Envoy took to mark B unhealthy (removal) and healthy again (recovery).
+
+| Health-check setting (stage `health-check`) | HTTP cluster | gRPC cluster |
+|---|---|---|
+| Check | `GET /health` | TCP connect |
+| Interval / timeout | 2 s / 1 s | 2 s / 1 s |
+| Unhealthy / healthy threshold | 2 failed / 2 passed checks | 2 failed / 2 passed checks |
+| No-traffic interval | 2 s | 2 s |
+| DNS refresh | 600 s (slowed on purpose so the health check, not DNS, removes B) | 600 s |
+
+**Everything at once**
+```powershell
+python scripts/run_experiments.py all           # about 20 minutes: experiments 1-3, results in evidence/part-d/
+python scripts/collect_evidence.py              # about 12 minutes: A-only and round-robin baselines into evidence/
+python scripts/summary_table.py                 # summary table -> evidence/summary-table.md
+```
+
+## 4. Recovery commands (back to normal)
+
+```powershell
+python scripts/fault.py clear                                  # remove the delay on B
+python scripts/envoy_stage.py round-robin                      # normal Envoy setup
+docker start filebeat inora-observability-part3-api-2 inora-observability-part3-grpc-2   # anything left stopped
+docker compose start envoy                                     # if Envoy itself was stopped
+python scripts/envoy_stage.py health-check                     # if a restarted replica got a new address (re-resolves names)
+docker compose restart grafana                                 # if the dashboard does not show up after a file change
+docker compose down ; docker compose up -d                     # full restart, data kept
+docker compose down -v                                         # full reset: ALSO deletes the database and log index
+```
+After recreating containers wait about 10 s before sending traffic (Envoy re-resolves replica names every 5 s).
+
+## 5. Checks
+
+```powershell
+python scripts/check_idempotency_across_replicas.py   # same Idempotency-Key on B, C, A (HTTP and gRPC): one order
+python scripts/check_trace_propagation.py             # traceparent reaches the replica through Envoy
+python scripts/es_trace_search.py --latest http       # Envoy event + replica event for one trace id (same for grpc)
+python -m pytest -q                                   # 127 tests
+```
+
+## 6. Layout
+
+| Path | Purpose |
 |---|---|
-| `tests/test_core.py` | business rules: valid, invalid, repeated (idempotent), declined, out of stock, parallel retries, cancel |
-| `tests/test_http_api.py` | HTTP: valid request, invalid input, repeated request, `429` + `Retry-After`, `problem+json` for every error |
-| `tests/test_openapi_contract.py` | uses `openapi.yaml` to check real responses (status, content type, headers, body schema) and request validation |
-| `tests/test_caller.py` | timeout, retry/backoff, circuit breaker, 429 handled separately |
-| `tests/test_grpc.py` | gRPC statuses, deadline, idempotency, **shared source of truth with HTTP**, trace correlation |
-| `tests/test_grpc_metrics.py` | gRPC metrics: counts by status, duration histogram, in-flight, bounded labels |
+| `app.py`, `grpc_server.py`, `inora_core/`, `inora_obs/`, `proto/`, `inora/` | HTTP API, gRPC service, shared business rules, logging/trace/replica/fault helpers (from A2, extended) |
+| `envoy/envoy.yaml`, `envoy/stages/` | active Envoy config and the five stage configs |
+| `docker-compose.yml`, `prometheus.yml`, `filebeat.yml`, `grafana/` | stack, scrape targets, log shipping, dashboard |
+| `scripts/` | load client, experiment runners, checks (see above) |
+| `faults/delay.json` | per-replica delay read by the replicas (`scripts/fault.py`) |
+| `evidence/` | outputs, screenshots and summary table for every run |
+| `docs/a3/` | plan, report tracker, architecture, shared-state table |
+| `report/` | the report (`REPORT.md`, `REPORT.pdf`) |
+| `docs/README_assignment2_original.md` | the Assignment 2 README (reused work) |
 
-### Try the HTTP API
+## 7. Reused work, tools and limits
 
-```powershell
-Invoke-RestMethod http://localhost:5000/products
-Invoke-RestMethod -Method Post -Uri http://localhost:5000/orders -ContentType "application/json" `
-  -Headers @{"Idempotency-Key"="demo-1"} `
-  -Body '{"product_id":"clover-pendant","quantity":1,"payment_token":"tok_visa"}'
-```
-(`Invoke-RestMethod` raises an error on 4xx/5xx responses; Swagger UI or `caller.py` show those more clearly.)
-Or open Swagger UI (http://localhost:8080), expand an operation, **Try it out**.
-
-### Python caller (timeout, retry, circuit breaker)
-
-```powershell
-$env:RATE_LIMIT_MAX=100          # the demo makes ~8 order attempts in a few seconds
-docker compose up -d api
-python caller.py --scenario reliability
-
-Remove-Item Env:RATE_LIMIT_MAX   # back to the default limit (5 per 10 s)
-docker compose up -d api
-python caller.py --scenario ratelimit
-```
-
-### gRPC client and the HTTP-vs-gRPC comparison
-
-```powershell
-python grpc_client.py --product-id clover-pendant --quantity 1 --payment-token tok_visa --idempotency-key demo-1
-python grpc_client.py --product-id clover-pendant --quantity 1 --payment-token tok_declined
-python grpc_client.py --product-id clover-pendant --quantity 1 --payment-token tok_visa --deadline 0.001
-python demo_http_vs_grpc.py
-```
-
-### Fill the dashboard
-
-```powershell
-python generate_traffic.py                   # fixed mix over HTTP and gRPC, ~2 minutes
-$env:GRPC_SIMULATE_DELAY=2; docker compose up -d grpc
-python generate_traffic.py --pause 0.5 --rounds 40   # slow gRPC handler: in-flight and p95 rise
-Remove-Item Env:GRPC_SIMULATE_DELAY; docker compose up -d grpc
-```
-
-### Regenerate the gRPC code from the `.proto`
-
-```powershell
-python -m grpc_tools.protoc -I proto --python_out=. --grpc_python_out=. proto/inora/v1/inora.proto
-```
-
-## 5. API reference
-
-Full machine-readable description: [`openapi.yaml`](openapi.yaml).
-
-| Method and path | Purpose | Success | Errors |
-|---|---|---|---|
-| `GET /products` | list products and stock | 200 | |
-| `GET /products/{product_id}` | one product | 200 | 404 |
-| `POST /orders` | place an order (`Idempotency-Key` optional, rate limited) | 201 created, 200 replay | 400, 404, 409, 422, 429, 500, 503 |
-| `GET /orders/{order_id}` | one order | 200 | 404 |
-| `POST /orders/{order_id}/cancellations` | cancel (safe to repeat) | 200 | 404 |
-
-`/metrics` and `/openapi.yaml` are infrastructure endpoints and are not part of the reviewed API.
-
-Request body for `POST /orders`: `{"product_id": "clover-pendant", "quantity": 1, "payment_token": "tok_visa"}`. Rules: quantity 1-10; the token must start with `tok_`; **`tok_declined` is always declined**, which makes failures repeatable.
-
-**One error format.** Every error (including unknown URL, wrong method, malformed JSON and unexpected failures) is `application/problem+json`:
-
-```json
-{"type": "https://inora.example/problems/payment_declined", "title": "Unprocessable Content", "status": 422,
- "detail": "payment was declined", "code": "payment_declined", "field": "payment_token", "trace_id": "..."}
-```
-
-| Situation | HTTP | gRPC status | `code` / `error-code` |
-|---|---|---|---|
-| Created | 201 | `OK` | |
-| Repeat with same key | 200 + `Idempotent-Replayed: true` | `OK`, `replayed=true` | |
-| Bad input | 400 | `INVALID_ARGUMENT` | `validation_error` |
-| Unknown product / order | 404 | `NOT_FOUND` | `not_found` |
-| Payment declined | 422 | `FAILED_PRECONDITION` | `payment_declined` |
-| Out of stock | 409 | `RESOURCE_EXHAUSTED` | `out_of_stock` |
-| Key reused with a different request | 409 | `ALREADY_EXISTS` | `idempotency_conflict` |
-| Too many requests | 429 + `Retry-After` | (not rate limited) | `rate_limit_exceeded` |
-| Transient server failure | 503 (`service_unavailable`; demo switch only) | `UNAVAILABLE` is reported by the client channel when the service is unreachable; the service has no fault switch for it | |
-| Client gave up | client timeout | `DEADLINE_EXCEEDED` (client) / `CANCELLED` (server metric) | |
-
-## 6. Reliability and rate limiting
-
-**Idempotency.** `POST /orders` accepts an `Idempotency-Key` (1-128 chars). The first request with a key creates the order and stores the key with a hash of the request in the database. Repeating the same key and body returns the original order (`200`, `Idempotent-Replayed: true`) and creates nothing; the same key with a different body is rejected (`409`). A failed attempt (declined payment, no stock) does not use up its key. The check and the insert run in one `BEGIN IMMEDIATE` transaction, so parallel retries (even from the gRPC container) create one order. Cancelling twice is also safe.
-
-**Rate limit.** `POST /orders`: **5 requests per 10-second fixed window per client address** (`X-Forwarded-For` if present, otherwise the connection address; this header is trusted, which is a known simplification). The limit is **shared by everyone behind the same address** and is kept in memory in the single API process (it resets if the container restarts). Over the limit the API answers `429` with `Retry-After` (seconds until the window resets) and `X-RateLimit-*` headers; calls are allowed again once the window has reset. The gRPC service is not rate limited.
-
-**Python caller** (`caller.py`): timeout 2.0 s per attempt; at most 3 attempts; exponential backoff 1 s then 2 s (cap 4 s, +/-10 % jitter); circuit breaker opens after 3 consecutive failures and allows one trial call after 5 s. Failures that count: timeouts, connection errors, HTTP 500/502/503/504. Client errors (4xx) are never retried. A `429` is reported separately with its `Retry-After` and never trips the breaker. A POST is only retried when it carries an `Idempotency-Key`; all attempts of one call reuse the same key and the same trace id.
-
-## 7. gRPC service
-
-`proto/inora/v1/inora.proto` defines one unary RPC, `PlaceOrder`. The handler in `grpc_server.py` calls `inora_core.Store.place_order` directly - the same function the Flask route calls - so both doors enforce the same rules on the same database. It is not a wrapper around the HTTP API.
-
-```
-HTTP : client -> Flask route -> inora_core.Store.place_order -> SQLite
-gRPC : client -> generated stub -> HTTP/2 -> generated dispatch -> OrderService.PlaceOrder
-              -> inora_core.Store.place_order -> SQLite
-```
-
-**Logs and trace correlation.** Both services write the same JSON line format (`inora_obs/logs.py`: `time, service_name, severity, message, request_id, trace_id, endpoint, status_code`) into `./logs`, which Filebeat ships to Elasticsearch. A W3C `traceparent` is accepted from an HTTP header or gRPC metadata (or created) and written as `trace_id` in every log line. In Kibana, search `trace_id : "<id>"` to see one request across `inora-http-api` and `inora-grpc`. A declined payment is logged at `ERROR` by both services. The trace id is never used as a Prometheus label.
-
-## 8. Metrics and dashboard
-
-Details, audit of the Assignment 1 metrics and the per-metric table: [`docs/part_c_metrics.md`](docs/part_c_metrics.md).
-
-* Prometheus job `inora_grpc` scrapes `grpc:9102`; `inora_backend` scrapes `api:5000` (config: `prometheus.yml`).
-* New gRPC metrics (server-side, bounded labels): `grpc_server_handled_total{grpc_service,grpc_method,grpc_code}`, `grpc_server_handling_seconds` (histogram, 5 ms - 5 s), `grpc_server_in_flight`; plus `business_orders_total{status}` (same meaning as the HTTP counter) and `inora_product_stock{product_id}`.
-* Dashboard JSON: `grafana/dashboards/inora-http-vs-grpc.json` (provisioned). Rates use a 1-minute window; error rate, p50 and p95 use a 5-minute window.
-
-## 9. Project layout
-
-```
-app.py                    HTTP API (Flask)           caller.py            Python caller: timeout/retry/breaker
-inora_core/               shared business rules      grpc_server.py       gRPC service
-  service.py  errors.py   (SQLite, idempotency)      grpc_metrics.py      gRPC metrics + interceptor
-inora_obs/                shared JSON logs, traceparent  grpc_client.py    gRPC client (deadline)
-proto/inora/v1/inora.proto                           demo_http_vs_grpc.py HTTP vs gRPC evidence script
-inora/v1/                 generated gRPC code        generate_traffic.py  repeatable traffic, both doors
-openapi.yaml              API description            traffic.py           continuous HTTP traffic (Part 1 style)
-tests/  docs/  evidence/                             cardinality_test.py  Part 1 experiment (not a test)
-prometheus.yml  filebeat.yml  docker-compose.yml  Dockerfile  Dockerfile.grpc  pytest.ini  requirements*.txt
-grafana/provisioning/ (data source, dashboard provider)   grafana/dashboards/ (Assignment 2 dashboard)
-grafana_dashboard.json    Part 1 dashboard (manual import)
-```
-
-## 10. Demo switches
-
-| Switch | Effect |
-|---|---|
-| `X-Simulate-Fault: 503` / `slow` request header on `POST /orders` | forces a 503 / delays the handler (default `FAULT_SLOW_SECONDS=2.5`); used by `caller.py`. Demo only. |
-| `FAULT_MODE=503\|slow` (API env) | same, for every request |
-| `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW` (API env) | change the rate limit (default 5 per 10 s) |
-| `GRPC_SIMULATE_DELAY=<seconds>` (gRPC env) | delays the gRPC handler |
-| `INORA_SEED_STOCK` | stock of the three regular products (compose uses 100000) |
-| `CORS_ALLOW_ORIGIN` | opt-in cross-origin access for Swagger UI (compose sets `http://localhost:8080`; unset by default) |
-
-## 11. Evidence
-
-Captured output and screenshots are in [`evidence/`](evidence/): caller reliability and rate-limit runs, HTTP-vs-gRPC comparison, traffic run, Kibana trace correlation, Prometheus targets, Grafana dashboard (normal and slow-handler).
-
-## 12. Sources and notes
-
-* Course lecture material on APIs/REST/OpenAPI/rate limiting and on gRPC (`APIs.md`, `GRPC.md` and the lecture slides) for the REST constraints, `problem+json`, `Idempotency-Key`, `traceparent` and rate-limit concepts.
-* Standards used: OpenAPI 3.0.3; RFC 9457 / RFC 7807 Problem Details; W3C Trace Context (`traceparent`); Protocol Buffers 3 and gRPC status codes.
-* Part 1 of this project (the Flask app, ELK pipeline, Prometheus/Grafana stack and `grafana_dashboard.json`) is the student's own earlier work and is reused here.
-* Data volumes (`inora-data`, Elasticsearch data) are not part of the submission.
+* **Reused:** Assignment 1 (observability stack: Prometheus, Grafana, Filebeat, Elasticsearch, Kibana) and Assignment 2
+  (HTTP API, gRPC service, metrics, tests), copied as the starting point of this repository.
+  New in this assignment: replicas and replica identity, Envoy configuration and stages, `GetProduct` operations,
+  per-replica dashboard, load client, experiment and evidence scripts, fault injection, health endpoint.
+* **Tools:** Envoy v1.39.1, Prometheus, Grafana, Filebeat/Elasticsearch/Kibana 8.12 (see `docker-compose.yml`);
+  Envoy documentation on load balancers and health checking.
+* **AI assistance:** Claude (Anthropic) was used as a coding and writing assistant; see the statement in the report.
+* **Limits:** one laptop, so latency varies from run to run (identical A-only runs gave client p95 between 13 and
+  39 ms); compare runs from the same session. Optional consistent hashing was not done.
+* Dependencies, virtual environment, Docker volumes and log files are not part of the repository (`.gitignore`).

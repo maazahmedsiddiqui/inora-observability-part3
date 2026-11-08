@@ -75,28 +75,28 @@ Common rules: start each from healthy Part C setup · same workload · restore n
 - [x] 4.1 Weighted round robin A:B:C = 2:1:1 (expect 50/25/25), explain latency and active requests
 - [x] 4.2 Least request: equal weights, fixed delay on B; run with round robin, then with least request (same delay, same workload); compare B's share, active requests, client p95
 - [x] 4.3 Failure and recovery: round robin, no delay; configure active health checks (record interval, timeout, unhealthy/healthy thresholds); stop B during traffic, then restart; show redistribution + client errors; relate removal/recovery time to settings
-- [ ] 4.4 Summary table of all runs (Run/interface, policy and fault, target/actual rps, A/B/C shares, client p95, error rate, explanation)
-- [ ] 4.5 One distribution result cross-checked against Envoy access logs for the same time range
-- [ ] 4.6 Note the two hints: higher weight ≠ more capacity; slow replica can still pass health checks
+- [~] 4.4 Summary table of all runs (Run/interface, policy and fault, target/actual rps, A/B/C shares, client p95, error rate, explanation)
+- [~] 4.5 One distribution result cross-checked against Envoy access logs for the same time range
+- [~] 4.6 Note the two hints: higher weight ≠ more capacity; slow replica can still pass health checks
 - **GATE 4:** all runs in the table, normal behaviour restored, log cross-check done.
 
 ## Phase 5 – Conclusions (and optional)
-- [ ] 5.1 Chosen strategy for HTTP and for gRPC, justified with our results
-- [ ] 5.2 One workload where we would choose differently
-- [ ] 5.3 What happens if Envoy stops + one improvement (no implementation needed)
+- [~] 5.1 Chosen strategy for HTTP and for gRPC, justified with our results
+- [~] 5.2 One workload where we would choose differently
+- [~] 5.3 What happens if Envoy stops + one improvement (no implementation needed)
 - [ ] 5.4 Optional: consistent hashing + 4th replica, show which product IDs change destination
 
 ## Evidence checkpoint (agreed 2026-11-08)
 After GATE 3 (round robin working for HTTP and gRPC) we STOP and collect all Part A to C evidence into `evidence/` with one script plus a screenshot list, before starting Part D. Part D evidence is collected per run.
 
 ## Phase 6 – Submission package
-- [ ] 6.1 Code/configuration (excluding dependencies and data volumes)
-- [ ] 6.2 Fixed-rate test client
-- [ ] 6.3 Exported Grafana dashboard JSON
-- [ ] 6.4 README: setup, experiment commands, recovery commands
-- [ ] 6.5 Report (2–3 pages of explanation, excluding charts): architecture + shared state, health-check settings, metric/query details, baselines, results table, two proxy/backend log examples, conclusions
-- [ ] 6.6 Report delivered as Markdown **and** PDF
-- [ ] 6.7 Reused work cited (A1, A2); academic-integrity policy followed (note: A2 skipped this "for now" – A3 explicitly requires it; decide wording with the course manual)
+- [~] 6.1 Code/configuration (excluding dependencies and data volumes)
+- [~] 6.2 Fixed-rate test client
+- [~] 6.3 Exported Grafana dashboard JSON
+- [~] 6.4 README: setup, experiment commands, recovery commands
+- [~] 6.5 Report (2–3 pages of explanation, excluding charts): architecture + shared state, health-check settings, metric/query details, baselines, results table, two proxy/backend log examples, conclusions
+- [~] 6.6 Report delivered as Markdown **and** PDF
+- [~] 6.7 Reused work cited (A1, A2); academic-integrity policy followed (note: A2 skipped this "for now" – A3 explicitly requires it; decide wording with the course manual)
 - [ ] 6.8 Final check: Part 1/2 hashes unchanged, fresh clone of Part 3 builds and runs
 
 ---
@@ -150,3 +150,6 @@ After GATE 3 (round robin working for HTTP and gRPC) we STOP and collect all Par
 - Envoy stages: weighted-2-1-1, least-request, health-check; `scripts/envoy_stage.py` now validates a stage before switching
 - `scripts/failure_test.py` (stop B / start B, removal and recovery times), `scripts/run_experiments.py all|weighted|delay|failure`, `scripts/summary_table.py`
 - `scripts/loadgen.py` records a per-second timeline (`per_second`) in its JSON
+
+
+## Documents delivered 2026-11-09 (final.zip): README.md, report/REPORT.md + REPORT.pdf, SHARED_STATE and architecture updated. Open: user review of the report and of the AI-assistance statement; final check (6.8): Part 1/2 hashes unchanged, fresh clone builds and runs; optional 5.4 consistent hashing not done.
