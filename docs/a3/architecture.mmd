@@ -35,4 +35,4 @@ flowchart TB
     prom -.->|"scrapes each replica directly"| http
     prom -.->|"scrapes each replica directly"| grpcs
     prom -.->|"/stats/prometheus"| envoy
-    prom --> graf
+    graf -->|"queries"| prom
