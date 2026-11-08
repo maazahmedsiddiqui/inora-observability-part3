@@ -1,0 +1,35 @@
+{
+  "run": "failure-http",
+  "rows": {
+    "A": {
+      "expected_pct": 33.3,
+      "prometheus": 1366,
+      "prometheus_pct": 38.5,
+      "envoy_log": 1366,
+      "envoy_log_pct": 37.9,
+      "client": 1366,
+      "client_pct": 38.7
+    },
+    "B": {
+      "expected_pct": 33.3,
+      "prometheus": 818,
+      "prometheus_pct": 23.0,
+      "envoy_log": 800,
+      "envoy_log_pct": 22.2,
+      "client": 800,
+      "client_pct": 22.7
+    },
+    "C": {
+      "expected_pct": 33.3,
+      "prometheus": 1365,
+      "prometheus_pct": 38.5,
+      "envoy_log": 1365,
+      "envoy_log_pct": 37.9,
+      "client": 1365,
+      "client_pct": 38.7
+    }
+  },
+  "envoy_log_total": 3600,
+  "envoy_log_no_replica": 69,
+  "counts_match_sent": true
+}

@@ -1,0 +1,15 @@
+Sending 40.0 req/s for 60.0 s (2400 requests) over grpc ...
+
+Run            : delay-rr-grpc   (grpc, inora.v1.CatalogService/GetProduct)
+Target         : 127.0.0.1:10001
+Window (UTC)   : 2026-11-08T16:28:50Z  ->  2026-11-08T16:29:51Z
+Target rate    : 40.0 req/s for 60.0 s   (retries: none, circuit breaker: none, timeout 5.0 s)
+Actual send    : 40.0 req/s   (max schedule lag 36.4 ms)
+Sent           : 2400    completed 2400
+Successes      : 2400
+Failures       : 0   (0.0 %)   
+Client latency : p50 10.06 ms   p95 412.29 ms   p99 433.4 ms   max 611.29 ms
+Client view of replicas that answered: {'A': 800, 'B': 800, 'C': 800}   shares % {'A': 33.3, 'B': 33.3, 'C': 33.3}
+
+JSON: {"name": "delay-rr-grpc", "interface": "grpc", "target": "127.0.0.1:10001", "operation": "inora.v1.CatalogService/GetProduct", "product_id": "clover-pendant", "started_utc": "2026-11-08T16:28:50Z", "ended_utc": "2026-11-08T16:29:51Z", "target_rps": 40.0, "duration_s": 60.0, "request_timeout_s": 5.0, "retries": "none", "circuit_breaker": "none", "sent": 2400, "completed": 2400, "ok": 2400, "failed": 0, "error_rate_pct": 0.0, "actual_send_rps": 40.0, "completed_rps": 39.75, "p50_ms": 10.06, "p95_ms": 412.29, "p99_ms": 433.4, "max_ms": 611.29, "max_schedule_lag_ms": 36.4, "p95_schedule_lag_ms": 1.01, "errors": {}, "client_view_replicas": {"A": 800, "B": 800, "C": 800}, "client_view_share_pct": {"A": 33.3, "B": 33.3, "C": 33.3}}
+summary written to C:\Users\SBT\Enterprise Software Dev\inora-observability - PART 3\inora-observability-part3\evidence\part-d\delay-rr\grpc\run.json

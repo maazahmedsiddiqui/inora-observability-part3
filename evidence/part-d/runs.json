@@ -1,0 +1,66 @@
+[
+  {
+    "id": "weighted-http",
+    "interface": "http",
+    "policy": "weighted round robin 2:1:1",
+    "fault": "none",
+    "run_json": "evidence\\part-d\\weighted\\http\\run.json",
+    "expect": "A=50,B=25,C=25"
+  },
+  {
+    "id": "weighted-grpc",
+    "interface": "grpc",
+    "policy": "weighted round robin 2:1:1",
+    "fault": "none",
+    "run_json": "evidence\\part-d\\weighted\\grpc\\run.json",
+    "expect": "A=50,B=25,C=25"
+  },
+  {
+    "id": "delay-rr-http",
+    "interface": "http",
+    "policy": "round robin",
+    "fault": "B +400 ms",
+    "run_json": "evidence\\part-d\\delay-rr\\http\\run.json",
+    "expect": null
+  },
+  {
+    "id": "delay-rr-grpc",
+    "interface": "grpc",
+    "policy": "round robin",
+    "fault": "B +400 ms",
+    "run_json": "evidence\\part-d\\delay-rr\\grpc\\run.json",
+    "expect": null
+  },
+  {
+    "id": "delay-lr-http",
+    "interface": "http",
+    "policy": "least request",
+    "fault": "B +400 ms",
+    "run_json": "evidence\\part-d\\delay-lr\\http\\run.json",
+    "expect": null
+  },
+  {
+    "id": "delay-lr-grpc",
+    "interface": "grpc",
+    "policy": "least request",
+    "fault": "B +400 ms",
+    "run_json": "evidence\\part-d\\delay-lr\\grpc\\run.json",
+    "expect": null
+  },
+  {
+    "id": "failure-http",
+    "interface": "http",
+    "policy": "round robin + active health checks",
+    "fault": "B stopped at 20 s, started at 45 s",
+    "run_json": "evidence\\part-d\\failure\\http\\run.json",
+    "expect": null
+  },
+  {
+    "id": "failure-grpc",
+    "interface": "grpc",
+    "policy": "round robin + active health checks",
+    "fault": "B stopped at 20 s, started at 45 s",
+    "run_json": "evidence\\part-d\\failure\\grpc\\run.json",
+    "expect": null
+  }
+]

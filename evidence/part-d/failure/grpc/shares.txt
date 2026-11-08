@@ -1,0 +1,11 @@
+
+Run failure-grpc (grpc)  2026-11-08T16:34:08Z -> 2026-11-08T16:35:38Z   sent 3600  ok 3535  failed 65  client p95 20.72 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              33.3        1367   38.3   +5.0       1367   38.0   +4.7    1367   38.7
+B              33.3         832   23.3  -10.0        801   22.2  -11.1     801   22.7
+C              33.3        1367   38.3   +5.0       1367   38.0   +4.7    1367   38.7
+no replica                                              65                    65   (requests that no replica answered: errors)
+total                      3566                     3600                  3535
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\failure\grpc\run.report.json

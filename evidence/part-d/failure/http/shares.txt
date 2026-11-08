@@ -1,0 +1,11 @@
+
+Run failure-http (http)  2026-11-08T16:32:23Z -> 2026-11-08T16:33:53Z   sent 3600  ok 3531  failed 69  client p95 23.68 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              33.3        1366   38.5   +5.2       1366   37.9   +4.6    1366   38.7
+B              33.3         818   23.0  -10.3        800   22.2  -11.1     800   22.7
+C              33.3        1365   38.5   +5.2       1365   37.9   +4.6    1365   38.7
+no replica                                              69                    69   (requests that no replica answered: errors)
+total                      3549                     3600                  3531
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\failure\http\run.report.json

@@ -1,0 +1,14 @@
+config check: OK
+envoy/envoy.yaml  <-  envoy/stages/weighted-2-1-1.yaml
+waiting for Envoy ...
+http_backend:
+   172.19.0.3:5000        weight=1  health=healthy
+   172.19.0.4:5000        weight=1  health=healthy
+   172.19.0.9:5000        weight=2  health=healthy
+grpc_backend:
+   172.19.0.10:50051      weight=1  health=healthy
+   172.19.0.13:50051      weight=1  health=healthy
+   172.19.0.14:50051      weight=2  health=healthy
+members: {'grpc_backend': 3, 'http_backend': 3}
+ Container envoy Restarting 
+ Container envoy Started 

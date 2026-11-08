@@ -1,0 +1,15 @@
+Sending 40.0 req/s for 60.0 s (2400 requests) over grpc ...
+
+Run            : weighted-grpc   (grpc, inora.v1.CatalogService/GetProduct)
+Target         : 127.0.0.1:10001
+Window (UTC)   : 2026-11-08T16:26:28Z  ->  2026-11-08T16:27:28Z
+Target rate    : 40.0 req/s for 60.0 s   (retries: none, circuit breaker: none, timeout 5.0 s)
+Actual send    : 40.0 req/s   (max schedule lag 120.57 ms)
+Sent           : 2400    completed 2400
+Successes      : 2400
+Failures       : 0   (0.0 %)   
+Client latency : p50 6.64 ms   p95 16.01 ms   p99 54.21 ms   max 166.58 ms
+Client view of replicas that answered: {'A': 1200, 'B': 600, 'C': 600}   shares % {'A': 50.0, 'B': 25.0, 'C': 25.0}
+
+JSON: {"name": "weighted-grpc", "interface": "grpc", "target": "127.0.0.1:10001", "operation": "inora.v1.CatalogService/GetProduct", "product_id": "clover-pendant", "started_utc": "2026-11-08T16:26:28Z", "ended_utc": "2026-11-08T16:27:28Z", "target_rps": 40.0, "duration_s": 60.0, "request_timeout_s": 5.0, "retries": "none", "circuit_breaker": "none", "sent": 2400, "completed": 2400, "ok": 2400, "failed": 0, "error_rate_pct": 0.0, "actual_send_rps": 40.0, "completed_rps": 39.98, "p50_ms": 6.64, "p95_ms": 16.01, "p99_ms": 54.21, "max_ms": 166.58, "max_schedule_lag_ms": 120.57, "p95_schedule_lag_ms": 0.86, "errors": {}, "client_view_replicas": {"A": 1200, "B": 600, "C": 600}, "client_view_share_pct": {"A": 50.0, "B": 25.0, "C": 25.0}}
+summary written to C:\Users\SBT\Enterprise Software Dev\inora-observability - PART 3\inora-observability-part3\evidence\part-d\weighted\grpc\run.json

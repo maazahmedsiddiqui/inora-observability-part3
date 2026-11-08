@@ -1,0 +1,11 @@
+waiting 1 s for Prometheus to scrape the end of the run ...
+
+Run delay-lr-grpc (grpc)  2026-11-08T16:31:08Z -> 2026-11-08T16:32:08Z   sent 2400  ok 2400  failed 0  client p95 410.19 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              33.3        1065   44.4  +11.1       1065   44.4  +11.1    1065   44.4
+B              33.3         316   13.2  -20.1        316   13.2  -20.1     316   13.2
+C              33.3        1019   42.5   +9.2       1019   42.5   +9.2    1019   42.5
+total                      2400                     2400                  2400
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\delay-lr\grpc\run.report.json

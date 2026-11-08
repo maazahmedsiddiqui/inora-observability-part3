@@ -72,9 +72,9 @@ Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only
 
 ## Phase 4 – Part D: experiments (HTTP and gRPC reported separately)
 Common rules: start each from healthy Part C setup · same workload · restore normal afterwards · client retries and circuit breakers **off** (client and Envoy) · for each: prediction → observation → explanation + charts + client results.
-- [~] 4.1 Weighted round robin A:B:C = 2:1:1 (expect 50/25/25), explain latency and active requests
-- [~] 4.2 Least request: equal weights, fixed delay on B; run with round robin, then with least request (same delay, same workload); compare B's share, active requests, client p95
-- [~] 4.3 Failure and recovery: round robin, no delay; configure active health checks (record interval, timeout, unhealthy/healthy thresholds); stop B during traffic, then restart; show redistribution + client errors; relate removal/recovery time to settings
+- [x] 4.1 Weighted round robin A:B:C = 2:1:1 (expect 50/25/25), explain latency and active requests
+- [x] 4.2 Least request: equal weights, fixed delay on B; run with round robin, then with least request (same delay, same workload); compare B's share, active requests, client p95
+- [x] 4.3 Failure and recovery: round robin, no delay; configure active health checks (record interval, timeout, unhealthy/healthy thresholds); stop B during traffic, then restart; show redistribution + client errors; relate removal/recovery time to settings
 - [ ] 4.4 Summary table of all runs (Run/interface, policy and fault, target/actual rps, A/B/C shares, client p95, error rate, explanation)
 - [ ] 4.5 One distribution result cross-checked against Envoy access logs for the same time range
 - [ ] 4.6 Note the two hints: higher weight ≠ more capacity; slow replica can still pass health checks

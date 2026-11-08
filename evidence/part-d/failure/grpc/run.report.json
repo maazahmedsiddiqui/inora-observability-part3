@@ -1,0 +1,35 @@
+{
+  "run": "failure-grpc",
+  "rows": {
+    "A": {
+      "expected_pct": 33.3,
+      "prometheus": 1367,
+      "prometheus_pct": 38.3,
+      "envoy_log": 1367,
+      "envoy_log_pct": 38.0,
+      "client": 1367,
+      "client_pct": 38.7
+    },
+    "B": {
+      "expected_pct": 33.3,
+      "prometheus": 832,
+      "prometheus_pct": 23.3,
+      "envoy_log": 801,
+      "envoy_log_pct": 22.2,
+      "client": 801,
+      "client_pct": 22.7
+    },
+    "C": {
+      "expected_pct": 33.3,
+      "prometheus": 1367,
+      "prometheus_pct": 38.3,
+      "envoy_log": 1367,
+      "envoy_log_pct": 38.0,
+      "client": 1367,
+      "client_pct": 38.7
+    }
+  },
+  "envoy_log_total": 3600,
+  "envoy_log_no_replica": 65,
+  "counts_match_sent": true
+}

@@ -1,0 +1,35 @@
+{
+  "run": "weighted-http",
+  "rows": {
+    "A": {
+      "expected_pct": 50.0,
+      "prometheus": 1201,
+      "prometheus_pct": 50.0,
+      "envoy_log": 1201,
+      "envoy_log_pct": 50.0,
+      "client": 1201,
+      "client_pct": 50.0
+    },
+    "B": {
+      "expected_pct": 25.0,
+      "prometheus": 600,
+      "prometheus_pct": 25.0,
+      "envoy_log": 600,
+      "envoy_log_pct": 25.0,
+      "client": 600,
+      "client_pct": 25.0
+    },
+    "C": {
+      "expected_pct": 25.0,
+      "prometheus": 599,
+      "prometheus_pct": 25.0,
+      "envoy_log": 599,
+      "envoy_log_pct": 25.0,
+      "client": 599,
+      "client_pct": 25.0
+    }
+  },
+  "envoy_log_total": 2400,
+  "envoy_log_no_replica": 0,
+  "counts_match_sent": true
+}

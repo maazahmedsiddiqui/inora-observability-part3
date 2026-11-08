@@ -1,0 +1,15 @@
+Sending 40.0 req/s for 60.0 s (2400 requests) over http ...
+
+Run            : delay-lr-http   (http, GET /products/clover-pendant)
+Target         : http://127.0.0.1:10000
+Window (UTC)   : 2026-11-08T16:30:06Z  ->  2026-11-08T16:31:06Z
+Target rate    : 40.0 req/s for 60.0 s   (retries: none, circuit breaker: none, timeout 5.0 s)
+Actual send    : 40.0 req/s   (max schedule lag 64.02 ms)
+Sent           : 2400    completed 2400
+Successes      : 2400
+Failures       : 0   (0.0 %)   
+Client latency : p50 9.61 ms   p95 412.39 ms   p99 420.11 ms   max 622.59 ms
+Client view of replicas that answered: {'A': 1052, 'B': 304, 'C': 1044}   shares % {'A': 43.8, 'B': 12.7, 'C': 43.5}
+
+JSON: {"name": "delay-lr-http", "interface": "http", "target": "http://127.0.0.1:10000", "operation": "GET /products/clover-pendant", "product_id": "clover-pendant", "started_utc": "2026-11-08T16:30:06Z", "ended_utc": "2026-11-08T16:31:06Z", "target_rps": 40.0, "duration_s": 60.0, "request_timeout_s": 5.0, "retries": "none", "circuit_breaker": "none", "sent": 2400, "completed": 2400, "ok": 2400, "failed": 0, "error_rate_pct": 0.0, "actual_send_rps": 40.0, "completed_rps": 39.98, "p50_ms": 9.61, "p95_ms": 412.39, "p99_ms": 420.11, "max_ms": 622.59, "max_schedule_lag_ms": 64.02, "p95_schedule_lag_ms": 0.93, "errors": {}, "client_view_replicas": {"A": 1052, "B": 304, "C": 1044}, "client_view_share_pct": {"A": 43.8, "B": 12.7, "C": 43.5}}
+summary written to C:\Users\SBT\Enterprise Software Dev\inora-observability - PART 3\inora-observability-part3\evidence\part-d\delay-lr\http\run.json

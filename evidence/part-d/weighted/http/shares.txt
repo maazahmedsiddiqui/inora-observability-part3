@@ -1,0 +1,10 @@
+
+Run weighted-http (http)  2026-11-08T16:25:25Z -> 2026-11-08T16:26:25Z   sent 2400  ok 2400  failed 0  client p95 23.17 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              50.0        1201   50.0   +0.0       1201   50.0   +0.0    1201   50.0
+B              25.0         600   25.0   +0.0        600   25.0   +0.0     600   25.0
+C              25.0         599   25.0   +0.0        599   25.0   +0.0     599   25.0
+total                      2400                     2400                  2400
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\weighted\http\run.report.json

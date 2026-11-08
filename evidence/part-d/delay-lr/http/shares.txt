@@ -1,0 +1,10 @@
+
+Run delay-lr-http (http)  2026-11-08T16:30:06Z -> 2026-11-08T16:31:06Z   sent 2400  ok 2400  failed 0  client p95 412.39 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              33.3        1052   43.8  +10.5       1052   43.8  +10.5    1052   43.8
+B              33.3         304   12.7  -20.6        304   12.7  -20.6     304   12.7
+C              33.3        1044   43.5  +10.2       1044   43.5  +10.2    1044   43.5
+total                      2400                     2400                  2400
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\delay-lr\http\run.report.json

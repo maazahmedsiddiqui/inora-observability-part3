@@ -1,0 +1,10 @@
+
+Run weighted-grpc (grpc)  2026-11-08T16:26:28Z -> 2026-11-08T16:27:28Z   sent 2400  ok 2400  failed 0  client p95 16.01 ms
+         expected %  prometheus      %   diff  envoy log      %   diff  client      %
+A              50.0        1200   50.0   +0.0       1200   50.0   +0.0    1200   50.0
+B              25.0         600   25.0   +0.0        600   25.0   +0.0     600   25.0
+C              25.0         600   25.0   +0.0        600   25.0   +0.0     600   25.0
+total                      2400                     2400                  2400
+
+CHECK: envoy log total == sent, and prometheus total between sent-failed and sent -> PASS
+written evidence\part-d\weighted\grpc\run.report.json

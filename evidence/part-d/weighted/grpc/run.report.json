@@ -1,0 +1,35 @@
+{
+  "run": "weighted-grpc",
+  "rows": {
+    "A": {
+      "expected_pct": 50.0,
+      "prometheus": 1200,
+      "prometheus_pct": 50.0,
+      "envoy_log": 1200,
+      "envoy_log_pct": 50.0,
+      "client": 1200,
+      "client_pct": 50.0
+    },
+    "B": {
+      "expected_pct": 25.0,
+      "prometheus": 600,
+      "prometheus_pct": 25.0,
+      "envoy_log": 600,
+      "envoy_log_pct": 25.0,
+      "client": 600,
+      "client_pct": 25.0
+    },
+    "C": {
+      "expected_pct": 25.0,
+      "prometheus": 600,
+      "prometheus_pct": 25.0,
+      "envoy_log": 600,
+      "envoy_log_pct": 25.0,
+      "client": 600,
+      "client_pct": 25.0
+    }
+  },
+  "envoy_log_total": 2400,
+  "envoy_log_no_replica": 0,
+  "counts_match_sent": true
+}
