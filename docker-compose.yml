@@ -50,7 +50,7 @@ services:
     container_name: envoy
     environment:
       - ENVOY_UID=0                                   # run as root so it can write the access log into ./logs
-    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info", "--file-flush-interval-msec", "1000"]   # write the access log every 1 s (default 10 s)
     ports:
       - "10000:10000"                                 # HTTP listener
       - "10001:10001"                                 # gRPC listener (HTTP/2)

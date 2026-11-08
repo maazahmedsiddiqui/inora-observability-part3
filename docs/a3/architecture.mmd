@@ -1,0 +1,38 @@
+flowchart TB
+    client["Test client<br/>HTTP :10000 &nbsp;|&nbsp; gRPC :10001"]
+    envoy["<b>Envoy v1.39.1</b><br/>HTTP listener :10000<br/>gRPC listener :10001 (HTTP/2)<br/>admin + metrics :9901"]
+
+    subgraph http["HTTP API replicas &nbsp;(Flask :5000)"]
+        direction LR
+        a1["A<br/>api-1"]
+        b1["B<br/>api-2"]
+        c1["C<br/>api-3"]
+    end
+    subgraph grpcs["gRPC replicas &nbsp;(:50051, metrics :9102)"]
+        direction LR
+        a2["A<br/>grpc-1"]
+        b2["B<br/>grpc-2"]
+        c2["C<br/>grpc-3"]
+    end
+
+    db[("<b>Shared SQLite file</b><br/>volume inora-data<br/>products, orders, idempotency keys")]
+    logs[["<b>./logs</b><br/>api-A/B/C.log, grpc-A/B/C.log<br/>envoy-access.log"]]
+    prom["Prometheus"]
+    graf["Grafana"]
+    fb["Filebeat"]
+    es[("Elasticsearch")]
+    kb["Kibana"]
+
+    client --> envoy
+    envoy -->|"Parts A, B: only A<br/>Part C on: A, B, C"| http
+    envoy -->|"Parts A, B: only A<br/>Part C on: A, B, C"| grpcs
+    http --> db
+    grpcs --> db
+    http -->|"JSON logs"| logs
+    grpcs -->|"JSON logs"| logs
+    envoy -->|"JSON access log"| logs
+    logs --> fb --> es --> kb
+    prom -.->|"scrapes each replica directly"| http
+    prom -.->|"scrapes each replica directly"| grpcs
+    prom -.->|"/stats/prometheus"| envoy
+    prom --> graf

@@ -5,7 +5,7 @@ Repo: `inora-observability-part3` (new). Part 1 and Part 2 repos are **read-only
 
 **Rule of the road:** we do not start a phase until the previous phase's "Exit gate" is fully ticked.
 
-Legend: `[ ]` open · `[x]` done · **GATE** = must pass before moving on
+Legend: `[ ]` open · `[~]` delivered, awaiting check · `[x]` done · **GATE** = must pass before moving on
 
 ---
 
@@ -37,16 +37,16 @@ Both hashes must match the table.
 ## Phase 1 – Part A: replicas and routing (Envoy → A only)
 Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only, Prometheus targets); **1b** = proof + documents (shared-state table, architecture diagram, rate-limit baseline, idempotency evidence).
 - [x] 1.1 Decisions D1–D4 settled (see Decision log)
-- [ ] 1.2 Compose rewritten for scaling (`api` and `grpc` replicas x3, no `container_name`, no fixed host ports on replicas, fixed project `name:`)
-- [ ] 1.3 Replica identifier in **logs** (new `replica` field) and **metrics** (`replica` label via Prometheus relabeling)
-- [ ] 1.4 Per-replica log files so three replicas never write the same file
-- [ ] 1.5 Envoy added: HTTP listener → cluster A only
-- [ ] 1.6 Envoy gRPC listener → cluster A only (HTTP/2 from the start, so Part C is a one-line change)
-- [ ] 1.7 B and C running but absent from Envoy clusters
-- [ ] 1.8 `traceparent` still reaches the replica through Envoy (HTTP header and gRPC metadata)
-- [ ] 1.9 Shared-state table written: data / rate-limit counters / idempotency records – shared or per-replica, and what breaks
-- [ ] 1.10 Architecture diagram drawn
-- [ ] 1.11 Duplicate prevention proven across replicas (same Idempotency-Key sent to two different replicas → one order)
+- [x] 1.2 Compose rewritten for scaling (`api` and `grpc` replicas x3, no `container_name`, no fixed host ports on replicas, fixed project `name:`)
+- [~] 1.3 Replica identifier in **logs** (new `replica` field) and **metrics** (`replica` label via Prometheus relabeling)
+- [x] 1.4 Per-replica log files so three replicas never write the same file
+- [x] 1.5 Envoy added: HTTP listener → cluster A only
+- [x] 1.6 Envoy gRPC listener → cluster A only (HTTP/2 from the start, so Part C is a one-line change)
+- [x] 1.7 B and C running but absent from Envoy clusters
+- [~] 1.8 `traceparent` still reaches the replica through Envoy (HTTP header and gRPC metadata)
+- [~] 1.9 Shared-state table written: data / rate-limit counters / idempotency records – shared or per-replica, and what breaks
+- [~] 1.10 Architecture diagram drawn
+- [x] 1.11 Duplicate prevention proven across replicas (same Idempotency-Key sent to two different replicas → one order)
 - **GATE 1:** one HTTP call and one gRPC call through Envoy reach only A; B and C healthy and idle; diagram + shared-state table done.
 
 ## Phase 2 – Part B: observe the baseline
@@ -85,6 +85,9 @@ Common rules: start each from healthy Part C setup · same workload · restore n
 - [ ] 5.2 One workload where we would choose differently
 - [ ] 5.3 What happens if Envoy stops + one improvement (no implementation needed)
 - [ ] 5.4 Optional: consistent hashing + 4th replica, show which product IDs change destination
+
+## Evidence checkpoint (agreed 2026-11-08)
+After GATE 3 (round robin working for HTTP and gRPC) we STOP and collect all Part A to C evidence into `evidence/` with one script plus a screenshot list, before starting Part D. Part D evidence is collected per run.
 
 ## Phase 6 – Submission package
 - [ ] 6.1 Code/configuration (excluding dependencies and data volumes)
