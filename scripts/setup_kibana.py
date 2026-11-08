@@ -19,7 +19,7 @@ import requests
 
 KIBANA = "http://localhost:5601"
 HEADERS = {"kbn-xsrf": "true", "Content-Type": "application/json"}
-COLUMNS = ["service_name", "replica", "interface", "endpoint", "path", "status_code", "response_code",
+COLUMNS = ["service_name", "replica", "api_kind", "endpoint", "path", "status_code", "response_code",
            "grpc_status", "severity", "message", "trace_id"]
 
 

@@ -37,7 +37,7 @@ static_resources:
                         json_format:
                           start_time: "%START_TIME%"
                           service_name: "envoy"
-                          interface: "http"
+                          api_kind: "http"
                           method: "%REQ(:METHOD)%"
                           path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
                           protocol: "%PROTOCOL%"
@@ -84,7 +84,7 @@ static_resources:
                         json_format:
                           start_time: "%START_TIME%"
                           service_name: "envoy"
-                          interface: "grpc"
+                          api_kind: "grpc"
                           method: "%REQ(:METHOD)%"
                           path: "%REQ(:PATH)%"
                           protocol: "%PROTOCOL%"

@@ -10,6 +10,7 @@ Needs the stack up, Filebeat running and a few seconds since the request.
 import argparse
 import json
 import sys
+import time
 
 import requests
 
@@ -25,7 +26,7 @@ def search(body):
 def latest_trace(interface):
     hits = search({"size": 1, "sort": [{"@timestamp": "desc"}],
                    "query": {"bool": {"filter": [{"term": {"service_name": "envoy"}},
-                                                 {"term": {"interface": interface}},
+                                                 {"term": {"api_kind": interface}},
                                                  {"exists": {"field": "trace_id"}}]}}})
     if not hits:
         sys.exit(f"no Envoy {interface} event with a trace_id in Elasticsearch yet "
@@ -34,13 +35,17 @@ def latest_trace(interface):
 
 
 def show(trace_id, raw):
-    events = search({"size": 20, "sort": [{"@timestamp": "asc"}],
-                     "query": {"match_phrase": {"trace_id": trace_id}}})
+    for _ in range(8):                      # Filebeat can be a few seconds behind: wait for both events
+        events = search({"size": 20, "sort": [{"@timestamp": "asc"}],
+                         "query": {"match_phrase": {"trace_id": trace_id}}})
+        if {e.get("service_name") == "envoy" for e in events} == {True, False}:
+            break
+        time.sleep(2)
     print(f"trace_id {trace_id}: {len(events)} event(s)\n")
     for e in events:
         who = e.get("service_name")
         if who == "envoy":
-            print(f"  ENVOY    replica={e.get('replica')}  {e.get('interface')} {e.get('method')} {e.get('path')}  "
+            print(f"  ENVOY    replica={e.get('replica')}  {e.get('api_kind')} {e.get('method')} {e.get('path')}  "
                   f"response_code={e.get('response_code')} grpc_status={e.get('grpc_status')}  "
                   f"duration={e.get('duration_ms')} ms  upstream={e.get('upstream_cluster')} {e.get('upstream_host')}")
         else:
