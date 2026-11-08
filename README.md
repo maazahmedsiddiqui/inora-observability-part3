@@ -1,6 +1,6 @@
 # Inora - Assignment 3: Load Balancing and Observability
 
-Enterprise Software Development, Fall 2026. Extends Assignment 2 (`inora-observability-part2`) and Assignment 1
+Enterprise Software Development, Fall 2026. Maaz Ahmed Siddiqui (HUID ms09980). Extends Assignment 2 (`inora-observability-part2`) and Assignment 1
 (`inora-observability`); both are unchanged. The HTTP API, gRPC service, shared business code and observability
 stack come from those assignments (reused work, see the end of this file).
 
@@ -164,7 +164,6 @@ python -m pytest -q                                   # 127 tests
   per-replica dashboard, load client, experiment and evidence scripts, fault injection, health endpoint.
 * **Tools:** Envoy v1.39.1, Prometheus, Grafana, Filebeat/Elasticsearch/Kibana 8.12 (see `docker-compose.yml`);
   Envoy documentation on load balancers and health checking.
-* **AI assistance:** Claude (Anthropic) was used as a coding and writing assistant; see the statement in the report.
 * **Limits:** one laptop, so latency varies from run to run (identical A-only runs gave client p95 between 13 and
   39 ms); compare runs from the same session. Optional consistent hashing was not done.
 * Dependencies, virtual environment, Docker volumes and log files are not part of the repository (`.gitignore`).

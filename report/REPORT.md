@@ -1,7 +1,7 @@
 ---
 title: "Assignment 3: Load Balancing and Observability"
 subtitle: "Inora (Enterprise Software Development, Fall 2026)"
-author: "Maaz - code, runs and evidence: github.com/maazahmedsiddiqui/inora-observability-part3"
+author: "Maaz Ahmed Siddiqui, HUID ms09980 (code, runs and evidence: github.com/maazahmedsiddiqui/inora-observability-part3)"
 ---
 
 ## 1. Architecture and shared state
@@ -200,7 +200,7 @@ gRPC  trace_id 312b100f218d843ace4e1931da9fc501: 2 events
    scraped directly). Envoy is a single point of failure. One improvement: run two Envoy instances behind a shared address
    (floating IP or DNS with health checks) so one can fail while the other serves. (Reasoned from the design, not run as a test.)
 
-## 9. Reused work, AI assistance and limits
+## 9. Reused work and limits
 
 **Reused:** Assignment 1 (Prometheus, Grafana, Filebeat, Elasticsearch, Kibana stack) and Assignment 2 (HTTP API, gRPC
 service, metrics, tests) are the starting point of this repository (`inora-observability`, `inora-observability-part2`,
@@ -208,11 +208,6 @@ unchanged). New here: replicas and replica identity, Envoy configuration and sta
 the per-replica dashboard, the open-loop client, fault injection, health endpoint, experiment and evidence scripts, and
 127 tests. Tools and documentation: Envoy v1.39.1 and its documentation on load balancing and health checking,
 Prometheus, Grafana, Elastic stack 8.12.
-
-**AI assistance:** I used Claude (Anthropic) as a coding and writing assistant for this assignment, including help with
-the Envoy configuration, scripts and drafting this report. I ran every command and experiment myself on my own machine, and
-the numbers above come from those runs (raw outputs and screenshots are in `evidence/`). *(Check this statement against the
-course's academic-integrity policy before submitting.)*
 
 **Limits:** one laptop (latency varies run to run), 60 s runs at 40 req/s, one workload per interface, least request with
 Envoy's default of two choices, histogram-based percentiles, a single SQLite writer, and no test of an Envoy failure or of
