@@ -72,9 +72,9 @@ Split in two: **1a** = infrastructure (compose scaling, replica id, Envoy A-only
 
 ## Phase 4 – Part D: experiments (HTTP and gRPC reported separately)
 Common rules: start each from healthy Part C setup · same workload · restore normal afterwards · client retries and circuit breakers **off** (client and Envoy) · for each: prediction → observation → explanation + charts + client results.
-- [ ] 4.1 Weighted round robin A:B:C = 2:1:1 (expect 50/25/25), explain latency and active requests
-- [ ] 4.2 Least request: equal weights, fixed delay on B; run with round robin, then with least request (same delay, same workload); compare B's share, active requests, client p95
-- [ ] 4.3 Failure and recovery: round robin, no delay; configure active health checks (record interval, timeout, unhealthy/healthy thresholds); stop B during traffic, then restart; show redistribution + client errors; relate removal/recovery time to settings
+- [~] 4.1 Weighted round robin A:B:C = 2:1:1 (expect 50/25/25), explain latency and active requests
+- [~] 4.2 Least request: equal weights, fixed delay on B; run with round robin, then with least request (same delay, same workload); compare B's share, active requests, client p95
+- [~] 4.3 Failure and recovery: round robin, no delay; configure active health checks (record interval, timeout, unhealthy/healthy thresholds); stop B during traffic, then restart; show redistribution + client errors; relate removal/recovery time to settings
 - [ ] 4.4 Summary table of all runs (Run/interface, policy and fault, target/actual rps, A/B/C shares, client p95, error rate, explanation)
 - [ ] 4.5 One distribution result cross-checked against Envoy access logs for the same time range
 - [ ] 4.6 Note the two hints: higher weight ≠ more capacity; slow replica can still pass health checks
@@ -143,3 +143,10 @@ After GATE 3 (round robin working for HTTP and gRPC) we STOP and collect all Par
 **Evidence checkpoint (agreed):** after Gate 3, one script re-runs A-only baseline and round robin for both interfaces and saves everything into `evidence/`, plus a screenshot list with file names.
 
 **Known notes:** Envoy `dns_refresh_rate` deprecation warning (harmless in v1.39.1); Envoy access log flushed every 1 s via `--file-flush-interval-msec`; after recreating containers wait about 10 s for Envoy's DNS; PowerShell needs `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` per window; internet is slow so build images one at a time; Grafana dashboard changes may need `docker compose restart grafana`.
+
+
+## Part D tooling (delivered 2026-11-08, partd.zip)
+- `inora_obs/fault.py` + `faults/delay.json` + `scripts/fault.py` (delay on one replica), `/health` endpoint on the HTTP API
+- Envoy stages: weighted-2-1-1, least-request, health-check; `scripts/envoy_stage.py` now validates a stage before switching
+- `scripts/failure_test.py` (stop B / start B, removal and recovery times), `scripts/run_experiments.py all|weighted|delay|failure`, `scripts/summary_table.py`
+- `scripts/loadgen.py` records a per-second timeline (`per_second`) in its JSON

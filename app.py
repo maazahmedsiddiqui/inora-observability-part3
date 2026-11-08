@@ -8,7 +8,7 @@ from flask import Flask, Response, jsonify, request
 from prometheus_client import Counter, Gauge, Histogram, Summary, generate_latest
 from werkzeug.exceptions import HTTPException
 
-from inora_obs import REPLICA, setup_file_logging
+from inora_obs import REPLICA, fault, setup_file_logging
 
 from inora_core import (
     DomainError,
@@ -164,7 +164,7 @@ def create_app(db_path=None, rate_limit=None, rate_window=None):
         request._traceparent = tp
         request._trace_id = trace_id
         request._req_id = req_id
-        if request.path != "/metrics":
+        if request.path not in ("/metrics", "/health"):
             ACTIVE_REQUESTS.inc()
 
     @app.after_request
@@ -177,7 +177,7 @@ def create_app(db_path=None, rate_limit=None, rate_window=None):
             response.headers["Access-Control-Allow-Headers"] = "Content-Type, Idempotency-Key, traceparent"
             response.headers["Access-Control-Expose-Headers"] = (
                 "Location, Idempotent-Replayed, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, traceparent, X-Replica")
-        if request.path != "/metrics":
+        if request.path not in ("/metrics", "/health"):
             ACTIVE_REQUESTS.dec()
             # Use route template (e.g. /orders/<order_id>) so path IDs never become labels
             route_Template = request.url_rule.rule if request.url_rule else "unmatched"
@@ -240,6 +240,11 @@ def create_app(db_path=None, rate_limit=None, rate_window=None):
     def metrics():
         return generate_latest(), 200, {"Content-Type": "text/plain; version=0.0.4"}
 
+    @app.route("/health", methods=["GET"])
+    def health():
+        """Liveness check for Envoy's active health checks. Not counted in the request metrics."""
+        return jsonify({"status": "ok", "replica": REPLICA}), 200
+
     @app.route("/openapi.yaml", methods=["GET"])
     def openapi_spec():
         spec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "openapi.yaml")
@@ -262,6 +267,7 @@ def create_app(db_path=None, rate_limit=None, rate_window=None):
 
     @app.route("/products/<product_id>", methods=["GET"])
     def get_product(product_id):
+        fault.apply_delay(REPLICA)                       # Part D: fixed delay on chosen replicas (no-op normally)
         product = store.get_product(product_id)
         logging.info(
             f"Fetched product {product_id}",

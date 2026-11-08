@@ -35,19 +35,22 @@ def prom_counts(query, at):
 
 def prometheus_share(run):
     if run["interface"] == "http":
-        q = f'sum by (replica) (app_requests_total{{endpoint="/products/<product_id>"}})'
+        sel = 'app_requests_total{endpoint="/products/<product_id>"}'
     else:
-        q = 'sum by (replica) (grpc_server_handled_total{grpc_method="GetProduct"})'
+        sel = 'grpc_server_handled_total{grpc_method="GetProduct"}'
+    q = f"sum by (replica) ({sel})"
     start, end = ts(run["started_utc"]) - 1, ts(run["ended_utc"]) + 8
     wait = end - time.time()
     if wait > 0:
         print(f"waiting {wait:.0f} s for Prometheus to scrape the end of the run ...")
         time.sleep(wait)
     before, after = prom_counts(q, start), prom_counts(q, end)
+    window = int(end - start) + 1
+    inc = prom_counts(f"sum by (replica) (increase({sel}[{window}s]))", end)       # copes with a replica restart
     out = {}
     for rep in sorted(set(before) | set(after)):
         b, a = before.get(rep, 0.0), after.get(rep, 0.0)
-        out[rep] = int(round(a - b if a >= b else a))          # a < b means the replica restarted: use what it has now
+        out[rep] = int(round(a - b)) if a >= b else int(round(inc.get(rep, a)))    # a < b = the replica restarted
     return out
 
 
@@ -100,11 +103,19 @@ def main():
         d1, d2 = round(sp.get(r, 0.0) - e, 1), round(sl.get(r, 0.0) - e, 1)
         print(f"{r:<8}{e:>11}{prom.get(r, 0):>12}{sp.get(r, 0.0):>7}{d1:>+7}{logs.get(r, 0):>11}{sl.get(r, 0.0):>7}{d2:>+7}"
               f"{client.get(r, 0):>8}{sc.get(r, 0.0):>7}")
+    other = log_total - sum(logs.get(r, 0) for r in REPLICAS)
+    if other:
+        print(f"{'no replica':<8}{'':>11}{'':>12}{'':>14}{other:>11}{'':>14}{run['failed']:>8}   "
+              "(requests that no replica answered: errors)")
     print(f"{'total':<8}{'':>11}{sum(prom.values()):>12.0f}{'':>14}{log_total:>11}{'':>14}{sum(client.values()):>8}")
-    ok = log_total == run["sent"] and sum(prom.values()) == run["sent"]
-    print("\nCHECK: sent == prometheus total == envoy log total ->", "PASS" if ok else "DIFFERENT (see numbers above)")
+    prom_total = sum(prom.values())
+    # every request is in Envoy's log; Prometheus only has requests a replica finished (failed ones may be missing)
+    ok = log_total == run["sent"] and run["sent"] - run["failed"] <= prom_total <= run["sent"]
+    print("\nCHECK: envoy log total == sent, and prometheus total between sent-failed and sent ->",
+          "PASS" if ok else "DIFFERENT (see numbers above)")
     out = a.json_file.replace(".json", ".report.json")
-    json.dump({"run": run["name"], "rows": rows, "envoy_log_total": log_total, "counts_match_sent": ok},
+    json.dump({"run": run["name"], "rows": rows, "envoy_log_total": log_total, "envoy_log_no_replica": other,
+               "counts_match_sent": ok},
               open(out, "w", encoding="utf-8"), indent=2)
     print("written", out)
     sys.exit(0 if ok else 1)

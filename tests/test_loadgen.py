@@ -57,6 +57,7 @@ def test_http_is_open_loop_and_counts_everything(http_base):
     assert wall < 3.5                                   # ... yet 30 of them finished in ~1.3 s, not 9 s: open loop
     assert s["retries"] == "none"
     assert sum(s["client_view_replicas"].values()) == 30
+    assert sum(x.get("ok", 0) + x.get("failed", 0) for x in s["per_second"]) == 30     # per-second timeline adds up
 
 
 def test_http_failures_are_counted_not_retried():

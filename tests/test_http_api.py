@@ -138,7 +138,7 @@ def test_openapi_spec_matches_registered_routes(client):
 
     flask_paths = set()
     for rule in client.application.url_map.iter_rules():
-        if rule.rule not in ("/static/<path:filename>", "/metrics", "/openapi.yaml"):
+        if rule.rule not in ("/static/<path:filename>", "/metrics", "/health", "/openapi.yaml"):
             normalized = re.sub(r"<(?:[^:>]+:)?([^>]+)>", r"{\1}", rule.rule)
             flask_paths.add(normalized)
 

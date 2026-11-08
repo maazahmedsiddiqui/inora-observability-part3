@@ -84,7 +84,7 @@ def post_order(client, body=GOOD, **headers):
 def test_spec_routes_and_methods_match_the_flask_app(client):
     from_spec = {(m.upper(), p.replace("{", "<").replace("}", ">")) for p, ops in SPEC["paths"].items() for m in ops}
     from_app = {(m, r.rule) for r in client.application.url_map.iter_rules() for m in r.methods
-                if m in ("GET", "POST") and r.rule not in ("/metrics", "/openapi.yaml", "/static/<path:filename>")}
+                if m in ("GET", "POST") and r.rule not in ("/metrics", "/health", "/openapi.yaml", "/static/<path:filename>")}
     assert from_spec == from_app
 
 

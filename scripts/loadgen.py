@@ -56,6 +56,7 @@ class Recorder:
         self.errors = collections.Counter()
         self.replicas = collections.Counter()
         self.done = 0
+        self.timeline = collections.defaultdict(collections.Counter)      # epoch second -> ok / failed / replica
 
     def add(self, ok, latency_s, replica, error=None):
         with self._lock:
@@ -68,6 +69,10 @@ class Recorder:
                 self.errors[error or "unknown"] += 1
             if replica:
                 self.replicas[replica] += 1
+            slot = self.timeline[int(time.time())]
+            slot["ok" if ok else "failed"] += 1
+            if replica:
+                slot[replica] += 1
 
 
 def _wait_for_completion(rec, sent, timeout_s):
@@ -101,6 +106,9 @@ def _summarise(name, interface, target, product, rate, duration, timeout_s, sent
         "client_view_replicas": dict(sorted(rec.replicas.items())),
         "client_view_share_pct": {r: round(100.0 * n / total_replied, 1) for r, n in sorted(rec.replicas.items())}
         if total_replied else {},
+        # one entry per second (by completion time): successes, failures and which replica answered
+        "per_second": [{"t_utc": datetime.datetime.fromtimestamp(sec, datetime.timezone.utc).strftime("%H:%M:%S"),
+                        **dict(sorted(c.items()))} for sec, c in sorted(rec.timeline.items())],
     }
 
 
@@ -196,7 +204,7 @@ def print_summary(s):
     print(f"Client latency : p50 {s['p50_ms']} ms   p95 {s['p95_ms']} ms   p99 {s['p99_ms']} ms   max {s['max_ms']} ms")
     print(f"Client view of replicas that answered: {s['client_view_replicas']}   shares % {s['client_view_share_pct']}")
     print()
-    print("JSON:", json.dumps(s))
+    print("JSON:", json.dumps({k: v for k, v in s.items() if k != "per_second"}))
 
 
 def main():

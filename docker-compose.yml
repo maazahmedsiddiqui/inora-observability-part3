@@ -22,8 +22,10 @@ services:
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-5}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-10}
       - CORS_ALLOW_ORIGIN=http://localhost:8080
+      - FAULT_FILE=/app/faults/delay.json             # Part D: per-replica delay (scripts/fault.py)
     volumes:
       - ./logs:/app/logs
+      - ./faults:/app/faults:ro
       - inora-data:/app/data                          # ONE shared SQLite file for all replicas
 
   grpc:
@@ -37,10 +39,12 @@ services:
       - REPLICA_BASE=inora-observability-part3-grpc
       - METRICS_PORT=9102
       - GRPC_SIMULATE_DELAY=${GRPC_SIMULATE_DELAY:-0}
+      - FAULT_FILE=/app/faults/delay.json             # Part D: per-replica delay (scripts/fault.py)
       - INORA_DB=/app/data/inora.db
       - INORA_SEED_STOCK=100000
     volumes:
       - ./logs:/app/logs
+      - ./faults:/app/faults:ro
       - inora-data:/app/data
     depends_on:
       - api

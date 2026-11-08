@@ -20,7 +20,7 @@ from inora.v1 import inora_pb2, inora_pb2_grpc
 from inora_core import (
     DomainError, IdempotencyConflict, NotFound, OutOfStock, PaymentDeclined, Store, ValidationFailed,
 )
-from inora_obs import REPLICA, make_traceparent, parse_traceparent, setup_file_logging
+from inora_obs import REPLICA, fault, make_traceparent, parse_traceparent, setup_file_logging
 import grpc_metrics
 
 log = logging.getLogger("inora.grpc")
@@ -105,6 +105,7 @@ class CatalogService(inora_pb2_grpc.CatalogServiceServicer):
     def GetProduct(self, request, context):
         traceparent, trace_id = _trace_context(context)
         ctx = {"request_id": trace_id[:8], "trace_id": trace_id, "endpoint": "/inora.v1.CatalogService/GetProduct"}
+        fault.apply_delay(REPLICA)                       # Part D: fixed delay on chosen replicas (no-op normally)
         try:
             if self.simulate_delay_s:
                 time.sleep(self.simulate_delay_s)
